@@ -57,12 +57,19 @@
 
 
 		<!-- MyBatis：写正确的版本号 3.0.3 -->
-		<dependency>
-			<groupId>org.mybatis.spring.boot</groupId>
-			<artifactId>mybatis-spring-boot-starter</artifactId>
-			<version>3.0.3</version>
-		</dependency>
 
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>com.baomidou</groupId>
+			<!-- Spring Boot 3 用这个：mybatis-plus-spring-boot3-starter [reference:0][reference:1] -->
+			<!-- Spring Boot 2 用这个：mybatis-plus-boot-starter [reference:2][reference:3] -->
+			<artifactId>mybatis-plus-spring-boot4-starter</artifactId>
+			<version>3.5.18</version> <!-- 请根据你的 Spring Boot 版本选择 3.5.5 ~ 3.5.9 之间的版本 -->
+		</dependency>
 	</dependencies>
 
 	<build>

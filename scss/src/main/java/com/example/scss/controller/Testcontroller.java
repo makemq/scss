@@ -12,4 +12,5 @@ public class Testcontroller {
     public String test() {
         return "基础框架搭建成功，后端已启动！";
     }
+
 }
