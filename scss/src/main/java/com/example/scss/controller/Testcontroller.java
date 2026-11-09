@@ -10,7 +10,7 @@ public class Testcontroller {
 
     @GetMapping("/test")
     public String test() {
-        return "基础框架搭建成功，后端已启动！";
+        return "基础框架搭建成功，后端已启动！ ";
     }
 
 }

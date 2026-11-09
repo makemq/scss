@@ -8,6 +8,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class ScssApplication {
 
 	public static void main(String[] args) {
+
 		SpringApplication.run(ScssApplication.class, args);
+
 	}
 }

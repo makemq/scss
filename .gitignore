@@ -12,3 +12,4 @@ Thumbs.db
 # 忽略前端依赖和打包产物 (双保险)
 node_modules/
 dist/
+DeepSeek.env
