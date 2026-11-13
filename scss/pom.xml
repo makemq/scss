@@ -47,7 +47,7 @@
 			<scope>test</scope>
 		</dependency>
 
-		<!-- MySQL 驱动：不写版本号，交给 Spring Boot 管 -->
+		<!-- MySQL 驱动：Spring Boot 管 -->
 
 		<dependency>
 			<groupId>com.mysql</groupId>

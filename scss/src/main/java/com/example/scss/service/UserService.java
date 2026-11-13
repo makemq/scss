@@ -1,0 +1,9 @@
+package com.example.scss.service;
+
+import com.example.scss.entity.SysUser;
+
+public interface UserService {
+    SysUser findByUsername(String username);
+    SysUser register(String username, String rawPassword);
+    boolean verifyPassword(String username, String rawPassword);
+}
