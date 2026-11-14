@@ -29,33 +29,114 @@
            <a href="#">注册账号</a> | <a href="#">忘记密码</a>
         </div>
       </div>
-      
-      <button type="button" @click="handleLogin">登 录</button>
+
+      <p v-if="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </p>
+
+      <p v-if="successMessage" class="success-message">
+        {{ successMessage }}
+      </p>
+
+      <button
+          type="button"
+          @click="handleLogin"
+          :disabled="loading"
+      >
+        {{ loading ? '登录中...' : '登 录' }}
+      </button>
     </form>
   </div>
 </template>
 
+
 <script setup>
 import { ref, reactive } from 'vue'
+import axios from 'axios'
 
 const activeTab = ref('password')
 const showPassword = ref(false)
+const loading = ref(false)
+const errorMessage = ref('')
+const successMessage = ref('')
+
 const form = reactive({
   username: '',
   password: '',
   rememberMe: false
 })
 
-const handleLogin = () => {
-  if (!form.username || !form.password) {
-    alert('请输入账号和密码')
+// 登录方法
+const handleLogin = async () => {
+  errorMessage.value = ''
+  successMessage.value = ''
+
+  // 1. 检查输入
+  if (!form.username.trim() || !form.password) {
+    errorMessage.value = '请输入账号和密码'
     return
   }
-  console.log('提交的数据：', form)
-} 
-</script> <!-- 修复4：补上了 script 标签的闭合 -->
+
+  // 2. 防止重复提交
+  if (loading.value) {
+    return
+  }
+
+  loading.value = true
+
+  try {
+    // 3. 调用 Spring Boot 登录接口
+    const response = await axios.post(
+        'http://localhost:8080/user/login',
+        {
+          username: form.username.trim(),
+          password: form.password
+        }
+    )
+
+    // 4. 判断登录结果
+    if (response.data.code === 200) {
+      const token = response.data.data
+
+      // 5. 保存 JWT Token
+      localStorage.setItem('token', token)
+
+      successMessage.value = '登录成功！'
+
+      console.log('登录成功，Token 已保存')
+    } else {
+      errorMessage.value =
+          response.data.message || '登录失败'
+    }
+
+  } catch (error) {
+    errorMessage.value =
+        error.response?.data?.message ||
+        '服务器连接失败，请检查后端是否启动'
+  } finally {
+    loading.value = false
+  }
+}
+</script>
+
 
 <style scoped>
+.error-message {
+  color: #dc2626;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.success-message {
+  color: #16a34a;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 /* 卡片外层 */
 .login_card {
   width: 380px;
