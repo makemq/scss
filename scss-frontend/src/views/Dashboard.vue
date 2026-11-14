@@ -1,6 +1,6 @@
 
 <script setup>
-import { defineProps } from 'vue'
+import { ref } from 'vue'
 
 defineProps({
   user: {
@@ -8,6 +8,14 @@ defineProps({
     default: () => ({})
   }
 })
+
+// 当前选中的菜单
+const currentPage = ref('首页')
+
+// 点击菜单时切换页面
+const changePage = (page) => {
+  currentPage.value = page
+}
 </script>
 
 <template>
@@ -16,22 +24,38 @@ defineProps({
       <div class="system-title">
         学生选课管理系统
       </div>
-
-      <div class="menu-item active">
-        <span>首页</span>
+      <div
+          class="menu-item"
+          :class="{ active: currentPage === '首页' }"
+          @click="changePage('首页')"
+      >
+        首页
       </div>
 
-      <div class="menu-item">
-        <span>学生管理</span>
+      <div
+          class="menu-item"
+          :class="{ active: currentPage === '学生管理' }"
+          @click="changePage('学生管理')"
+      >
+        学生管理
       </div>
 
-      <div class="menu-item">
-        <span>课程管理</span>
+      <div
+          class="menu-item"
+          :class="{ active: currentPage === '课程管理' }"
+          @click="changePage('课程管理')"
+      >
+        课程管理
       </div>
 
-      <div class="menu-item">
-        <span>选课管理</span>
+      <div
+          class="menu-item"
+          :class="{ active: currentPage === '选课管理' }"
+          @click="changePage('选课管理')"
+      >
+        选课管理
       </div>
+
     </aside>
 
     <section class="main-area">
@@ -47,13 +71,20 @@ defineProps({
       </header>
 
       <main class="content">
-        <h2>欢迎进入学生选课管理系统</h2>
-        <p>请从左侧菜单选择需要使用的功能。</p>
+        <h2>{{ currentPage }}</h2>
 
         <div class="welcome-card">
-          <h3>系统首页</h3>
-          <p>当前登录用户：{{ user.username }}</p>
-          <p>当前用户角色：{{ user.role }}</p>
+          <template v-if="currentPage === '首页'">
+            <h3>系统首页</h3>
+            <p>欢迎进入学生选课管理系统！</p>
+            <p>当前登录用户：{{ user.username }}</p>
+            <p>当前用户角色：{{ user.role }}</p>
+          </template>
+
+          <template v-else>
+            <h3>{{ currentPage }}</h3>
+            <p>{{ currentPage }}功能正在建设中，敬请期待。</p>
+          </template>
         </div>
       </main>
     </section>
