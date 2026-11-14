@@ -1,10 +1,14 @@
 package com.example.scss.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.scss.config.Result;
 import com.example.scss.dto.StudentAddRequest;
 import com.example.scss.dto.StudentUpdateRequest;
 import com.example.scss.entity.Student;
 import com.example.scss.service.StudentService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -118,5 +122,36 @@ public class StudentController {
         }
 
         return Result.success("学生删除成功");
+    }
+
+    // 分页查询 + 关键词模糊搜索
+    @Override
+    public IPage<Student> pageStudents(
+            String keyword,
+            Long pageNum,
+            Long pageSize) {
+
+        // 1. 创建分页对象
+        Page<Student> page = new Page<>(pageNum, pageSize);
+
+        // 2. 创建查询条件
+        LambdaQueryWrapper<Student> wrapper =
+                new LambdaQueryWrapper<>();
+
+        // 3. 判断关键词是否为空
+        if (keyword != null && !keyword.trim().isEmpty()) {
+
+            String searchKeyword = keyword.trim();
+
+            // 姓名或学号包含关键词即可匹配
+            wrapper.and(w -> w
+                    .like(Student::getName, searchKeyword)
+                    .or()
+                    .like(Student::getStudentNo, searchKeyword)
+            );
+        }
+
+        // 4. 执行分页查询
+        return studentMapper.selectPage(page, wrapper);
     }
 }
