@@ -60,17 +60,11 @@ const handleLoginSuccess = async (token) => {
       />
 
       <!-- 已登录：显示后台欢迎页面 -->
-      <div v-else class="dashboard">
-        <h2>欢迎进入学生选课管理系统</h2>
-
-        <p v-if="currentUser">
-          当前用户：{{ currentUser.username }}
-        </p>
-
-        <p v-if="currentUser">
-          用户角色：{{ currentUser.role }}
-        </p>
-      </div>
+      <!-- 已登录：显示真正的后台页面 -->
+      <Dashboard
+          v-els
+          :user="currentUser"
+      />
     </main>
 
     <!-- 3. 底部 Footer -->
