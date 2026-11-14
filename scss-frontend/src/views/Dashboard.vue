@@ -64,11 +64,11 @@ defineProps({
 .dashboard {
   display: flex;
   width: 100%;
-  height: 100%;
+  height: 100vh;
+  overflow: hidden;
   background: #f3f5f9;
   color: #333;
 }
-
 .sidebar {
   width: 220px;
   flex-shrink: 0;
@@ -101,6 +101,7 @@ defineProps({
   min-width: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .topbar {
@@ -129,9 +130,11 @@ defineProps({
 }
 
 .content {
+  flex: 1;
+  min-height: 0;
   padding: 30px;
+  overflow-y: auto;
 }
-
 .content h2 {
   margin-bottom: 12px;
 }
