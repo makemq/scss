@@ -1,7 +1,7 @@
 
 <script setup>
 import { ref } from 'vue'
-
+import StudentManagement from './StudentManagement.vue'
 defineProps({
   user: {
     type: Object,
@@ -73,18 +73,20 @@ const changePage = (page) => {
       <main class="content">
         <h2>{{ currentPage }}</h2>
 
-        <div class="welcome-card">
-          <template v-if="currentPage === '首页'">
-            <h3>系统首页</h3>
-            <p>欢迎进入学生选课管理系统！</p>
-            <p>当前登录用户：{{ user.username }}</p>
-            <p>当前用户角色：{{ user.role }}</p>
-          </template>
+        <div v-if="currentPage === '首页'" class="welcome-card">
+          <h3>系统首页</h3>
+          <p>欢迎进入学生选课管理系统！</p>
+          <p>当前登录用户：{{ user.username }}</p>
+          <p>当前用户角色：{{ user.role }}</p>
+        </div>
 
-          <template v-else>
-            <h3>{{ currentPage }}</h3>
-            <p>{{ currentPage }}功能正在建设中，敬请期待。</p>
-          </template>
+        <StudentManagement
+            v-else-if="currentPage === '学生管理'"
+        />
+
+        <div v-else class="welcome-card">
+          <h3>{{ currentPage }}</h3>
+          <p>{{ currentPage }}功能正在建设中，敬请期待。</p>
         </div>
       </main>
     </section>
