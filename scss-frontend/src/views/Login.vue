@@ -24,7 +24,7 @@
       
       <div class="form-options"> 
         <label><input type="checkbox" v-model="form.rememberMe" /> 7天免登录</label>
-        <!-- 修复2：去掉了多余的 = 号 -->
+
         <div class="links">
            <a href="#">注册账号</a> | <a href="#">忘记密码</a>
         </div>
@@ -53,7 +53,7 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import axios from 'axios'
-
+const emit = defineEmits(['login-success'])
 const activeTab = ref('password')
 const showPassword = ref(false)
 const loading = ref(false)
@@ -103,7 +103,7 @@ const handleLogin = async () => {
 
       successMessage.value = '登录成功！'
 
-      console.log('登录成功，Token 已保存')
+      emit('login-success', token)
     } else {
       errorMessage.value =
           response.data.message || '登录失败'
