@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import axios from 'axios'
 import Login from './views/Login.vue'
-
+import Dashboard from './views/Dashboard.vue'
 const isLoggedIn = ref(false)
 const currentUser = ref(null)
 const loadingUser = ref(false)
