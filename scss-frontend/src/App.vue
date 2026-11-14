@@ -53,8 +53,24 @@ const handleLoginSuccess = async (token) => {
 
     <!-- 2. 中间主体区域 (背景图 + 登录框) -->
     <main class="main-content">
-      <!-- 这里直接引入你刚才写好的 Login 组件 -->
-      <Login />
+      <!-- 未登录：显示登录页面 -->
+      <Login
+          v-if="!isLoggedIn"
+          @login-success="handleLoginSuccess"
+      />
+
+      <!-- 已登录：显示后台欢迎页面 -->
+      <div v-else class="dashboard">
+        <h2>欢迎进入学生选课管理系统</h2>
+
+        <p v-if="currentUser">
+          当前用户：{{ currentUser.username }}
+        </p>
+
+        <p v-if="currentUser">
+          用户角色：{{ currentUser.role }}
+        </p>
+      </div>
     </main>
 
     <!-- 3. 底部 Footer -->
