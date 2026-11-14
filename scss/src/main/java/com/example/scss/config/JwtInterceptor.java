@@ -1,9 +1,14 @@
 
 package com.example.scss.config;
-
+import com.example.scss.annotation.RequireRole;
+import org.springframework.web.method.HandlerMethod;
+import com.example.scss.service.UserService;
 import com.example.scss.utils.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import com.example.scss.service.UserService;
+import com.example.scss.entity.SysUser;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -11,7 +16,8 @@ import org.springframework.web.servlet.HandlerInterceptor;
 public class JwtInterceptor implements HandlerInterceptor {
 
     private final JwtUtil jwtUtil;
-
+    @Autowired
+    private UserService userService;
     public JwtInterceptor(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
     }
@@ -40,12 +46,44 @@ public class JwtInterceptor implements HandlerInterceptor {
         if (username == null || username.isBlank()) {
             return unauthorized(response);
         }
+        // 根据用户名查询用户信息
+        SysUser user = userService.findByUsername(username);
 
-        // 6. 保存当前登录用户名，方便后续业务使用
+// 用户不存在，拒绝访问
+        if (user == null) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return false;
+        }
         request.setAttribute("username", username);
+        request.setAttribute("role", user.getRole());
 
-        // 7. 验证成功，放行请求
+// 获取当前请求对应的 Controller 方法
+        if (handler instanceof HandlerMethod handlerMethod) {
+
+            // 获取方法上的角色权限注解
+            RequireRole requireRole =
+                    handlerMethod.getMethodAnnotation(RequireRole.class);
+
+            // 如果接口声明了角色要求，就检查当前用户角色
+            if (requireRole != null) {
+
+                String requiredRole = requireRole.value();
+                String currentRole = user.getRole();
+
+                if (!requiredRole.equals(currentRole)) {
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter().write(
+                            "{\"code\":403,\"message\":\"没有权限访问该接口\",\"data\":null}"
+                    );
+                    return false;
+                }
+            }
+        }
+
         return true;
+
+
     }
 
     private boolean unauthorized(HttpServletResponse response)

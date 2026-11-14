@@ -3,38 +3,60 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
-
+import org.springframework.beans.factory.annotation.Value;
 import javax.crypto.SecretKey;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
+import java.security.Key;
 import java.util.Date;
-@Component
+
+@Component // 必须加这个
 public class JwtUtil {
-    private static final String SECRET_STRING = "scss-secret-key-2024-very-long-and-secure-123456";
-    private static final SecretKey KEY = Keys.hmacShaKeyFor(SECRET_STRING.getBytes(StandardCharsets.UTF_8));
-    private static final long EXPIRATION_TIME = 24 * 60 * 60 * 1000;
+
+    // 1. 读取环境变量，
+    @Value("${JWT_SECRET:scss-secret-key-2024-very-long-and-secure-123456}")
+    private String secretString;
+
+    // 2. 有效期，单位毫秒 (这里默认24小时)
+    @Value("${JWT_EXPIRATION:86400000}")
+    private long expiration;
+
+    // 3. 动态生成 Key
+    private Key getKey() {
+        return Keys.hmacShaKeyFor(secretString.getBytes(StandardCharsets.UTF_8));
+    }
+
     public String generateToken(String username) {
         return Jwts.builder()
-                .subject(username) // 设置主题（存什么都可以，比如用户名或用户ID）
-                .issuedAt(new Date()) // 设置签发时间
-                .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME)) // 设置过期时间
-                .signWith(KEY) // 使用密钥签名 (0.12.x 新写法，自动识别 HS256)
-                .compact(); // 生成最终字符串
+                .subject(username)
+                .issuedAt(new Date())
+
+                .expiration(new Date(System.currentTimeMillis() + expiration))
+
+                .signWith(getKey(), SignatureAlgorithm.HS256)
+                .compact();
     }
+
     public Claims parseToken(String token) {
         return Jwts.parser()
-                .verifyWith(KEY) // 使用密钥验证签名
+
+                .verifyWith((SecretKey) getKey())
                 .build()
-                .parseSignedClaims(token) // 解析
-                .getPayload(); // 获取载荷部分
+                .parseSignedClaims(token)
+                .getPayload();
     }
+
     public String getUsernameFromToken(String token) {
         try {
             Claims claims = parseToken(token);
             return claims.getSubject();
         } catch (Exception e) {
-            // 如果解析失败（过期、伪造等），返回 null
             return null;
         }
-
-
-}}
+    }
+}

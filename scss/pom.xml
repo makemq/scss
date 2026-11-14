@@ -78,8 +78,12 @@
 			<version>0.12.5</version>
 			<scope>runtime</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.baomidou</groupId>
+			<artifactId>mybatis-plus-jsqlparser</artifactId>
+			<version>3.5.18</version>
+		</dependency>
 
-		<!-- MyBatis：写正确的版本号 3.0.3 -->
 
 		<dependency>
 			<groupId>org.projectlombok</groupId>
