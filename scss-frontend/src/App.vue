@@ -39,38 +39,30 @@ const handleLoginSuccess = async (token) => {
 </script>
 <template>
   <div class="app-container">
-    <!-- 1. 顶部 Header -->
-    <header class="header">
-      <div class="logo-area">
-        <img src="@/assets/ph3.png" alt="logo" class="logo-img" /> <!-- 换成你的logo图 -->
-        <span class="title">吉首大学 | 统一身份认证</span>
-      </div>
-      <div class="right-area">
-        <span>您正在登录 教务管理系统</span>
-        <div class="lang-switch">简体中文</div>
-      </div>
-    </header>
+    <!-- 未登录：显示登录页面 -->
+    <template v-if="!isLoggedIn">
+      <header class="header">
+        <div class="logo-area">
+          <img src="@/assets/ph3.png" alt="logo" class="logo-img" />
+          <span class="title">吉首大学 | 统一身份认证</span>
+        </div>
+        <div class="right-area">
+          <span>您正在登录 教务管理系统</span>
+          <div class="lang-switch">简体中文</div>
+        </div>
+      </header>
 
-    <!-- 2. 中间主体区域 (背景图 + 登录框) -->
-    <main class="main-content">
-      <!-- 未登录：显示登录页面 -->
-      <Login
-          v-if="!isLoggedIn"
-          @login-success="handleLoginSuccess"
-      />
+      <main class="main-content">
+        <Login @login-success="handleLoginSuccess" />
+      </main>
 
-      <!-- 已登录：显示后台欢迎页面 -->
-      <!-- 已登录：显示真正的后台页面 -->
-      <Dashboard
-          v-else
-          :user="currentUser"
-      />
-    </main>
+      <footer class="footer">
+        吉首大学
+      </footer>
+    </template>
 
-    <!-- 3. 底部 Footer -->
-    <footer class="footer">
-      吉首大学 
-    </footer>
+    <!-- 已登录：显示独立的后台页面 -->
+    <Dashboard v-else :user="currentUser" />
   </div>
 </template>
 <style>
