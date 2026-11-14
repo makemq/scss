@@ -1,5 +1,41 @@
 <script setup>
-import Login from './views/Login.vue' // 路径根据你实际存放的位置调整
+import { ref } from 'vue'
+import axios from 'axios'
+import Login from './views/Login.vue'
+
+const isLoggedIn = ref(false)
+const currentUser = ref(null)
+const loadingUser = ref(false)
+
+// 登录成功后执行
+const handleLoginSuccess = async (token) => {
+  loadingUser.value = true
+
+  try {
+    const response = await axios.get(
+        'http://localhost:8080/user/me',
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+    )
+
+    if (response.data.code === 200) {
+      currentUser.value = response.data.data
+      isLoggedIn.value = true
+    } else {
+      alert(response.data.message || '获取用户信息失败')
+    }
+  } catch (error) {
+    alert(
+        error.response?.data?.message ||
+        '获取用户信息失败，请检查后端服务'
+    )
+  } finally {
+    loadingUser.value = false
+  }
+}
 </script>
 <template>
   <div class="app-container">
