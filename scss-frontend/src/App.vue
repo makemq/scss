@@ -62,7 +62,7 @@ const handleLoginSuccess = async (token) => {
       <!-- 已登录：显示后台欢迎页面 -->
       <!-- 已登录：显示真正的后台页面 -->
       <Dashboard
-          v-els
+          v-else
           :user="currentUser"
       />
     </main>
