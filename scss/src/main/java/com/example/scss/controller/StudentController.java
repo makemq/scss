@@ -125,33 +125,26 @@ public class StudentController {
     }
 
     // 分页查询 + 关键词模糊搜索
-    @Override
-    public IPage<Student> pageStudents(
-            String keyword,
-            Long pageNum,
-            Long pageSize) {
+    @GetMapping("/page")
+    public Result<IPage<Student>> pageStudents(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "1") Long pageNum,
+            @RequestParam(defaultValue = "10") Long pageSize) {
 
-        // 1. 创建分页对象
-        Page<Student> page = new Page<>(pageNum, pageSize);
-
-        // 2. 创建查询条件
-        LambdaQueryWrapper<Student> wrapper =
-                new LambdaQueryWrapper<>();
-
-        // 3. 判断关键词是否为空
-        if (keyword != null && !keyword.trim().isEmpty()) {
-
-            String searchKeyword = keyword.trim();
-
-            // 姓名或学号包含关键词即可匹配
-            wrapper.and(w -> w
-                    .like(Student::getName, searchKeyword)
-                    .or()
-                    .like(Student::getStudentNo, searchKeyword)
-            );
+        // 检查分页参数
+        if (pageNum < 1 || pageSize < 1 || pageSize > 100) {
+            return Result.error(400, "分页参数不合法");
         }
 
-        // 4. 执行分页查询
-        return studentMapper.selectPage(page, wrapper);
+        // 调用 Service 层
+        IPage<Student> page = studentService.pageStudents(
+                keyword,
+                pageNum,
+                pageSize
+        );
+
+        return Result.success(page);
     }
+
+
 }
