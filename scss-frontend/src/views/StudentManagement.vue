@@ -211,6 +211,7 @@ onMounted(() => {
         <th>ID</th>
         <th>姓名</th>
         <th>学号</th>
+        <th>操作</th>
       </tr>
       </thead>
 
@@ -227,6 +228,9 @@ onMounted(() => {
         <td>{{ student.id }}</td>
         <td>{{ student.name }}</td>
         <td>{{ student.studentNo }}</td>
+        <td>
+          <button @click="openEditForm(student)">修改</button>
+        </td>
       </tr>
       </tbody>
     </table>
