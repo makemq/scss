@@ -56,7 +56,7 @@ public class JwtInterceptor implements HandlerInterceptor {
         }
         request.setAttribute("username", username);
         request.setAttribute("role", user.getRole());
-
+        request.setAttribute("studentId", user.getStudentId());
 // 获取当前请求对应的 Controller 方法
         if (handler instanceof HandlerMethod handlerMethod) {
 

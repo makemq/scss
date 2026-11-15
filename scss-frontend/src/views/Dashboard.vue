@@ -2,6 +2,7 @@
 <script setup>
 import { ref } from 'vue'
 import StudentManagement from './StudentManagement.vue'
+import CourseManagement from './CourseManagement.vue'
 defineProps({
   user: {
     type: Object,
@@ -92,7 +93,9 @@ const changePage = (page) => {
         <StudentManagement
             v-else-if="currentPage === '学生管理'"
         />
-
+        <CourseManagement
+            v-else-if="currentPage === '课程管理'"
+        />
         <div v-else class="welcome-card">
           <h3>{{ currentPage }}</h3>
           <p>{{ currentPage }}功能正在建设中，敬请期待。</p>

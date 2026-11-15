@@ -13,5 +13,5 @@ public class SysUser {
     private String username;
     private String password;
     private String role;
-
+    private Long studentId;
 }

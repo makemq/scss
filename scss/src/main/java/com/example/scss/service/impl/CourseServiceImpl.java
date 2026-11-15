@@ -8,17 +8,20 @@ import com.example.scss.entity.Course;
 import com.example.scss.mapper.CourseMapper;
 import com.example.scss.service.CourseService;
 import org.springframework.stereotype.Service;
-
+import com.example.scss.mapper.EnrollmentMapper;
 import java.util.List;
 
 @Service
 public class CourseServiceImpl implements CourseService {
-
     private final CourseMapper courseMapper;
-
-    public CourseServiceImpl(CourseMapper courseMapper) {
+    private final EnrollmentMapper enrollmentMapper;
+    public CourseServiceImpl(
+            CourseMapper courseMapper,
+            EnrollmentMapper enrollmentMapper) {
         this.courseMapper = courseMapper;
+        this.enrollmentMapper = enrollmentMapper;
     }
+
 
     // 查询所有课程
     @Override
@@ -59,14 +62,20 @@ public class CourseServiceImpl implements CourseService {
 
         return courseMapper.updateById(course) > 0;
     }
-
-    // 删除课程
     @Override
     public boolean deleteCourse(Long id) {
+
         // 检查课程是否存在
         Course course = courseMapper.selectById(id);
 
         if (course == null) {
+            return false;
+        }
+
+        // 检查课程是否存在选课记录（包括已退选记录）
+        Long count = enrollmentMapper.countByCourseId(id);
+
+        if (count != null && count > 0) {
             return false;
         }
 
