@@ -6,7 +6,14 @@ import Dashboard from './views/Dashboard.vue'
 const isLoggedIn = ref(false)
 const currentUser = ref(null)
 const loadingUser = ref(false)
+// 页面启动时恢复登录状态
+onMounted(() => {
+  const token = localStorage.getItem('token')
 
+  if (token) {
+    handleLoginSuccess(token)
+  }
+})
 // 登录成功后执行
 const handleLoginSuccess = async (token) => {
   loadingUser.value = true
