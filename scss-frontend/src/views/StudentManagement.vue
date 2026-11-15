@@ -274,6 +274,7 @@ onMounted(() => {
         <td>{{ student.studentNo }}</td>
         <td>
           <button @click="openEditForm(student)">修改</button>
+          <button @click="deleteStudent(student.id)">删除</button>
         </td>
       </tr>
       </tbody>
