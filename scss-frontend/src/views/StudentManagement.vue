@@ -75,6 +75,34 @@ const updateStudent = async () => {
     alert(error.response?.data?.message || '修改学生失败')
   }
 }
+// 删除学生
+const deleteStudent = async (id) => {
+  if (!confirm('确定要删除这名学生吗？')) {
+    return
+  }
+
+  try {
+    const token = localStorage.getItem('token')
+
+    const response = await axios.delete(
+        `http://localhost:8080/student/${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+    )
+
+    if (response.data.code === 200) {
+      alert('学生删除成功')
+      loadStudents()
+    } else {
+      alert(response.data.message || '删除失败')
+    }
+  } catch (error) {
+    alert(error.response?.data?.message || '删除学生失败')
+  }
+}
 // 新增学生
 const addStudent = async () => {
   if (!newStudent.value.name.trim() || !newStudent.value.studentNo.trim()) {
