@@ -16,7 +16,49 @@ const keyword = ref('')
 
 // 加载状态
 const loading = ref(false)
+// 新增学生表单
+const showAddForm = ref(false)
+const newStudent = ref({
+  name: '',
+  studentNo: ''
+})
 
+// 新增学生
+const addStudent = async () => {
+  if (!newStudent.value.name.trim() || !newStudent.value.studentNo.trim()) {
+    alert('姓名和学号不能为空')
+    return
+  }
+
+  try {
+    const token = localStorage.getItem('token')
+
+    const response = await axios.post(
+        'http://localhost:8080/student/add',
+        {
+          name: newStudent.value.name.trim(),
+          studentNo: newStudent.value.studentNo.trim()
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+    )
+
+    if (response.data.code === 200) {
+      alert('学生新增成功')
+      newStudent.value = { name: '', studentNo: '' }
+      showAddForm.value = false
+      pageNum.value = 1
+      loadStudents()
+    } else {
+      alert(response.data.message || '新增失败')
+    }
+  } catch (error) {
+    alert(error.response?.data?.message || '新增学生失败')
+  }
+}
 // 查询学生
 const loadStudents = async () => {
   loading.value = true
@@ -85,6 +127,23 @@ onMounted(() => {
 
 <template>
   <div class="student-management">
+    <button @click="showAddForm = !showAddForm">
+      {{ showAddForm ? '取消新增' : '新增学生' }}
+    </button>
+
+    <div v-if="showAddForm" class="add-form">
+      <input
+          v-model="newStudent.name"
+          placeholder="请输入学生姓名"
+      />
+
+      <input
+          v-model="newStudent.studentNo"
+          placeholder="请输入学生学号"
+      />
+
+      <button @click="addStudent">提交</button>
+    </div>
     <div class="toolbar">
       <input
           v-model="keyword"
@@ -143,6 +202,17 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.add-form {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.add-form input {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
 .student-management {
   width: 100%;
 }
