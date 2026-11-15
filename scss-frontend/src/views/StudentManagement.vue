@@ -22,7 +22,59 @@ const newStudent = ref({
   name: '',
   studentNo: ''
 })
+// 修改学生表单
+const showEditForm = ref(false)
+const editStudent = ref({
+  id: null,
+  name: '',
+  studentNo: ''
+})
 
+// 打开修改表单
+const openEditForm = (student) => {
+  editStudent.value = {
+    id: student.id,
+    name: student.name,
+    studentNo: student.studentNo
+  }
+  showEditForm.value = true
+}
+
+// 修改学生
+const updateStudent = async () => {
+  if (!editStudent.value.name.trim() || !editStudent.value.studentNo.trim()) {
+    alert('姓名和学号不能为空')
+    return
+  }
+
+  try {
+    const token = localStorage.getItem('token')
+
+    const response = await axios.put(
+        'http://localhost:8080/student/update',
+        {
+          id: editStudent.value.id,
+          name: editStudent.value.name.trim(),
+          studentNo: editStudent.value.studentNo.trim()
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+    )
+
+    if (response.data.code === 200) {
+      alert('学生信息修改成功')
+      showEditForm.value = false
+      loadStudents()
+    } else {
+      alert(response.data.message || '修改失败')
+    }
+  } catch (error) {
+    alert(error.response?.data?.message || '修改学生失败')
+  }
+}
 // 新增学生
 const addStudent = async () => {
   if (!newStudent.value.name.trim() || !newStudent.value.studentNo.trim()) {
