@@ -196,6 +196,22 @@ onMounted(() => {
 
       <button @click="addStudent">提交</button>
     </div>
+    <!-- 修改学生表单 -->
+    <div v-if="showEditForm" class="add-form">
+      <input
+          v-model="editStudent.name"
+          placeholder="请输入学生姓名"
+      />
+
+      <input
+          v-model="editStudent.studentNo"
+          placeholder="请输入学生学号"
+      />
+
+      <button @click="updateStudent">保存修改</button>
+
+      <button @click="showEditForm = false">取消</button>
+    </div>
     <div class="toolbar">
       <input
           v-model="keyword"
