@@ -35,10 +35,19 @@ const handleLoginSuccess = async (token) => {
       alert(response.data.message || '获取用户信息失败')
     }
   } catch (error) {
-    alert(
-        error.response?.data?.message ||
-        '获取用户信息失败，请检查后端服务'
-    )
+    const status = error.response?.status
+
+    // Token 失效或无权限时，清除登录状态
+    if (status === 401 || status === 403) {
+      localStorage.removeItem('token')
+      isLoggedIn.value = false
+      currentUser.value = null
+
+      alert('登录状态已失效，请重新登录')
+    } else {
+      // 网络错误等情况不清除 Token
+      alert('获取用户信息失败，请检查后端服务')
+    }
   } finally {
     loadingUser.value = false
   }
