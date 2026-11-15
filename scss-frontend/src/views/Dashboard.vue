@@ -8,7 +8,13 @@ defineProps({
     default: () => ({})
   }
 })
+const emit = defineEmits(['logout'])
 
+const handleLogout = () => {
+  if (confirm('确定要退出登录吗？')) {
+    emit('logout')
+  }
+}
 // 当前选中的菜单
 const currentPage = ref('首页')
 
@@ -65,8 +71,11 @@ const changePage = (page) => {
         <div class="user-info">
           {{ user.username || '用户' }}
           <span class="role">
-            {{ user.role || '未知角色' }}
-          </span>
+    {{ user.role || '未知角色' }}
+  </span>
+          <button class="logout-btn" @click="handleLogout">
+            退出登录
+          </button>
         </div>
       </header>
 
@@ -94,6 +103,18 @@ const changePage = (page) => {
 </template>
 
 <style scoped>
+.logout-btn {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 4px;
+  background: #dc3545;
+  color: white;
+  cursor: pointer;
+}
+
+.logout-btn:hover {
+  background: #bd2130;
+}
 .dashboard {
   display: flex;
   width: 100%;
