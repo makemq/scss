@@ -5,14 +5,20 @@ import com.example.scss.dto.RegisterRequest;
 import com.example.scss.entity.SysUser;
 import com.example.scss.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import com.example.scss.dto.LoginRequest;
 import com.example.scss.service.UserService;
 import com.example.scss.utils.JwtUtil;
+import com.example.scss.dto.UserProfileResponse;
+import com.example.scss.entity.Student;
+import com.example.scss.mapper.StudentMapper;
 @RestController
 @RequestMapping("/user")
-// @CrossOrigin // 如果遇到跨域报错，可以临时加上这个注解测试（推荐还是去 CorsConfig 里统一配好）
+// @CrossOrigin //
 public class UserController {
+    @Autowired
+    private StudentMapper studentMapper;
     private final UserService userService;
     private final JwtUtil jwtUtil;
 
@@ -93,8 +99,10 @@ public class UserController {
 
         return Result.success(token);
     }
+
     @GetMapping("/me")
-    public Result me(HttpServletRequest request) {
+    public Result<UserProfileResponse> me(HttpServletRequest request) {
+
         String username = (String) request.getAttribute("username");
 
         if (username == null) {
@@ -107,9 +115,22 @@ public class UserController {
             return Result.error("用户不存在");
         }
 
-        // 不返回密码，避免泄露密码哈希
-        user.setPassword(null);
+        UserProfileResponse profile = new UserProfileResponse();
+        profile.setUsername(user.getUsername());
+        profile.setRole(user.getRole());
+        profile.setStudentId(user.getStudentId());
 
-        return Result.success(user);
+        // 如果是学生账号，查询对应的学生档案
+        if ("STUDENT".equals(user.getRole()) && user.getStudentId() != null) {
+            Student student = studentMapper.selectById(user.getStudentId());
+
+            if (student != null) {
+                profile.setName(student.getName());
+                profile.setStudentNo(student.getStudentNo());
+            }
+        }
+
+        return Result.success(profile);
     }
+
 }

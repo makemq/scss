@@ -1,6 +1,6 @@
 
 package com.example.scss.service.impl;
-
+import com.example.scss.dto.AdminEnrollmentResponse;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.example.scss.entity.Course;
 import com.example.scss.entity.Enrollment;
@@ -25,7 +25,10 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         this.enrollmentMapper = enrollmentMapper;
         this.courseMapper = courseMapper;
     }
-
+    @Override
+    public List<AdminEnrollmentResponse> listAllEnrollments() {
+        return enrollmentMapper.selectAllEnrollmentDetails();
+    }
     // 选课
     @Override
     @Transactional
@@ -37,7 +40,10 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                 || course.getStatus() != 1) {
             return false;
         }
-
+        // 检查是否与已选课程时间冲突
+        if (hasTimeConflict(studentId, course)) {
+            throw new IllegalArgumentException("与已选课程上课时间冲突，不能重复选课");
+        }
         // 检查是否已经选过
         LambdaQueryWrapper<Enrollment> wrapper =
                 new LambdaQueryWrapper<>();
@@ -90,7 +96,42 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
         return true;
     }
+    // 检查学生是否存在上课时间冲突
+    private boolean hasTimeConflict(Long studentId, Course newCourse) {
 
+        LambdaQueryWrapper<Enrollment> wrapper =
+                new LambdaQueryWrapper<>();
+
+        wrapper.eq(Enrollment::getStudentId, studentId)
+                .eq(Enrollment::getStatus, 1);
+
+        List<Enrollment> enrollments =
+                enrollmentMapper.selectList(wrapper);
+
+        for (Enrollment enrollment : enrollments) {
+
+            // 跳过同一门课程
+            if (enrollment.getCourseId().equals(newCourse.getId())) {
+                continue;
+            }
+
+            Course oldCourse =
+                    courseMapper.selectById(enrollment.getCourseId());
+
+            if (oldCourse == null) {
+                continue;
+            }
+
+            // 同一天，并且节次有重叠
+            if (oldCourse.getClassDay().equals(newCourse.getClassDay())
+                    && oldCourse.getStartSection() <= newCourse.getEndSection()
+                    && newCourse.getStartSection() <= oldCourse.getEndSection()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
     // 退课
     @Override
     @Transactional

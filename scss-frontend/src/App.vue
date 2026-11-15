@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import Login from './views/Login.vue'
 import Dashboard from './views/Dashboard.vue'
+import StudentDashboard from './views/StudentDashboard.vue'
 const isLoggedIn = ref(false)
 const currentUser = ref(null)
 const loadingUser = ref(false)
@@ -66,7 +67,7 @@ const handleLogout = () => {
       <header class="header">
         <div class="logo-area">
           <img src="@/assets/ph3.png" alt="logo" class="logo-img" />
-          <span class="title">吉首大学 | 统一身份认证</span>
+          <span class="title">某某大学 | 学生选课管理系统</span>
         </div>
         <div class="right-area">
           <span>您正在登录 教务管理系统</span>
@@ -79,16 +80,30 @@ const handleLogout = () => {
       </main>
 
       <footer class="footer">
-        吉首大学
+        学生选课管理平台
       </footer>
     </template>
 
     <!-- 已登录：显示独立的后台页面 -->
+    <!-- 管理员端 -->
     <Dashboard
-        v-else
+        v-else-if="currentUser?.role === 'ADMIN'"
         :user="currentUser"
         @logout="handleLogout"
     />
+
+    <!-- 学生端 -->
+    <StudentDashboard
+        v-else-if="currentUser?.role === 'STUDENT'"
+        :user="currentUser"
+        @logout="handleLogout"
+    />
+
+    <!-- 未知角色 -->
+    <div v-else>
+      <p>账号角色异常，请重新登录</p>
+      <button @click="handleLogout">退出登录</button>
+    </div>
   </div>
 </template>
 <style>

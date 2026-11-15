@@ -36,7 +36,7 @@ public class JwtInterceptor implements HandlerInterceptor {
             return unauthorized(response);
         }
 
-        // 3. 去掉 Bearer 前缀，得到真正的 Token
+        // 3. 去掉 Bearer 得到真正的 Token
         String token = authHeader.substring(7);
 
         // 4. 验证 Token，获取用户名
@@ -57,7 +57,7 @@ public class JwtInterceptor implements HandlerInterceptor {
         request.setAttribute("username", username);
         request.setAttribute("role", user.getRole());
         request.setAttribute("studentId", user.getStudentId());
-// 获取当前请求对应的 Controller 方法
+
         if (handler instanceof HandlerMethod handlerMethod) {
 
             // 获取方法上的角色权限注解

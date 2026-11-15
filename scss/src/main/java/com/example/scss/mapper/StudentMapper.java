@@ -8,5 +8,5 @@ import org.apache.ibatis.annotations.Mapper;
 public interface StudentMapper extends BaseMapper<Student> {
 
 
-    // 只要继承了 BaseMapper，就已经自带了增删改查所有方法，不用写 SQL！
+
 }

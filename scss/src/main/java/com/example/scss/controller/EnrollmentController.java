@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
-
+import com.example.scss.dto.AdminEnrollmentResponse;
 @RestController
 @RequestMapping("/enrollment")
 public class EnrollmentController {
@@ -89,5 +89,11 @@ public class EnrollmentController {
         return Result.success(
                 enrollmentService.listByStudentId(studentId)
         );
+    }
+    // 管理员查询全部选课记录
+    @GetMapping("/admin/list")
+    @RequireRole("ADMIN")
+    public Result<List<AdminEnrollmentResponse>> listAllEnrollments() {
+        return Result.success(enrollmentService.listAllEnrollments());
     }
 }

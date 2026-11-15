@@ -1,7 +1,7 @@
 <template>
   <div class="login_card">
     <div class="card-header">
-      <!-- 修复1：去掉了尖括号，加上自闭合 / -->
+      <!-- 修复1：加上自闭合 / -->
       <img src="@/assets/ph2.png" />
       <span>统一身份认证</span>
     </div>
@@ -13,7 +13,7 @@
     <form class="login-form">
       <div class="input-group">
         <i class="icon-user"></i>
-        <input type="text" v-model="form.username" placeholder="请输入学号/工号" />
+        <input type="text" v-model="form.username" placeholder="请输入用戶名" />
       </div>
       
       <div class="input-group">

@@ -8,4 +8,5 @@ public interface UserService {
     SysUser findByUsername(String username);
     SysUser register(String username, String rawPassword);
     boolean verifyPassword(String username, String rawPassword);
+    boolean changePassword(String username, String oldPassword, String newPassword);
 }

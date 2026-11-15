@@ -76,4 +76,36 @@ public class UserServiceImpl implements UserService {
         );
     }
 
+    @Override
+    public boolean changePassword(String username, String oldPassword, String newPassword) {
+
+        // 1. 检查新密码
+        if (newPassword == null || newPassword.length() < 8) {
+            throw new IllegalArgumentException("新密码至少需要8个字符");
+        }
+
+        if (newPassword.length() > 72) {
+            throw new IllegalArgumentException("新密码不能超过72个字符");
+        }
+
+        // 2. 查询用户
+        SysUser user = findByUsername(username);
+
+        if (user == null) {
+            throw new IllegalArgumentException("用户不存在");
+        }
+
+        // 3. 验证旧密码
+        if (oldPassword == null ||
+                !passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new IllegalArgumentException("旧密码错误");
+        }
+
+        // 4. 加密新密码
+        user.setPassword(passwordEncoder.encode(newPassword));
+
+        // 5. 更新数据库
+        return userMapper.updateById(user) > 0;
+    }
+
 }
