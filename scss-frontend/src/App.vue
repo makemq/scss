@@ -52,6 +52,12 @@ const handleLoginSuccess = async (token) => {
     loadingUser.value = false
   }
 }
+// 退出登录
+const handleLogout = () => {
+  localStorage.removeItem('token')
+  currentUser.value = null
+  isLoggedIn.value = false
+}
 </script>
 <template>
   <div class="app-container">
@@ -78,7 +84,11 @@ const handleLoginSuccess = async (token) => {
     </template>
 
     <!-- 已登录：显示独立的后台页面 -->
-    <Dashboard v-else :user="currentUser" />
+    <Dashboard
+        v-else
+        :user="currentUser"
+        @logout="handleLogout"
+    />
   </div>
 </template>
 <style>
