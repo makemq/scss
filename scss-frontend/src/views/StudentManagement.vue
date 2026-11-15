@@ -261,11 +261,11 @@ onMounted(() => {
 
       <tbody>
       <tr v-if="loading">
-        <td colspan="3">正在加载...</td>
+        <td colspan="4">正在加载...</td>
       </tr>
 
       <tr v-else-if="students.length === 0">
-        <td colspan="3">暂无学生数据</td>
+        <td colspan="4">暂无学生数据</td>
       </tr>
 
       <tr v-for="student in students" :key="student.id">
