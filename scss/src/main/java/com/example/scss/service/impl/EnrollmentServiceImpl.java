@@ -15,157 +15,115 @@ import java.util.List;
 
 @Service
 public class EnrollmentServiceImpl implements EnrollmentService {
-
     private final EnrollmentMapper enrollmentMapper;
     private final CourseMapper courseMapper;
-
-    public EnrollmentServiceImpl(
-            EnrollmentMapper enrollmentMapper,
-            CourseMapper courseMapper) {
+    public EnrollmentServiceImpl(EnrollmentMapper enrollmentMapper, CourseMapper courseMapper) {
         this.enrollmentMapper = enrollmentMapper;
         this.courseMapper = courseMapper;
     }
     @Override
-    public List<AdminEnrollmentResponse> listAllEnrollments() {
-        return enrollmentMapper.selectAllEnrollmentDetails();
-    }
-    // 选课
-    @Override
     @Transactional
     public boolean selectCourse(Long studentId, Long courseId) {
-        // 检查课程是否存在
+        //锁定课程，避免并发选课超出容量
         Course course = courseMapper.selectByIdForUpdate(courseId);
-        if (course == null || course.getStatus() == null
-                || course.getStatus() != 1) {
+        //检查课程是否存在、是否正常开放
+        if (course == null || course.getStatus() == null || course.getStatus() != 1) {
             return false;
         }
-        // 检查是否与已选课程时间冲突
-        if (hasTimeConflict(studentId, course)) {
-            throw new IllegalArgumentException("与已选课程上课时间冲突，不能重复选课");
-        }
-        // 检查是否已经选过
         LambdaQueryWrapper<Enrollment> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Enrollment::getStudentId, studentId)
                 .eq(Enrollment::getCourseId, courseId);
-        Enrollment oldEnrollment = enrollmentMapper.selectOne(wrapper);
-        if (oldEnrollment != null) {
-            // 已经选课，不允许重复选
-            if (oldEnrollment.getStatus() != null
-                    && oldEnrollment.getStatus() == 1) {
-                return false;
-            }
-
-            // 曾经退选过，恢复选课记录
-            if (course.getSelectedCount() >= course.getCapacity()) {
-                return false;
-            }
-
-            oldEnrollment.setStatus(1);
-            oldEnrollment.setEnrollTime(LocalDateTime.now());
-
-            course.setSelectedCount(course.getSelectedCount() + 1);
-
-            enrollmentMapper.updateById(oldEnrollment);
-            courseMapper.updateById(course);
-            return true;
+        Enrollment enrollment = enrollmentMapper.selectOne(wrapper);
+        //不能重复选课
+        if (enrollment != null && enrollment.getStatus() == 1) {
+            return false;
         }
-
-        // 检查课程容量
+        // 3. 检查是否与学生已选课程时间冲突
+        if (hasTimeConflict(studentId, course)) {
+            throw new IllegalArgumentException("与已选课程上课时间冲突，不能重复选课");
+        }
+        // 检查课程是否已满
         if (course.getSelectedCount() >= course.getCapacity()) {
             return false;
         }
 
-        // 创建选课记录
-        Enrollment enrollment = new Enrollment();
-        enrollment.setStudentId(studentId);
-        enrollment.setCourseId(courseId);
-        enrollment.setEnrollTime(LocalDateTime.now());
-        enrollment.setStatus(1);
-
-        // 更新课程已选人数
-        course.setSelectedCount(course.getSelectedCount() + 1);
-
-        enrollmentMapper.insert(enrollment);
+        //如果之前退过这门课，恢复原来的选课记录
+        if (enrollment != null) {
+            enrollment.setStatus(1);
+            enrollment.setEnrollTime(LocalDateTime.now());
+            enrollmentMapper.updateById(enrollment);
+        } else {
+            // 7. 如果没有历史记录，新增选课记录
+            enrollment = new Enrollment();
+            enrollment.setStudentId(studentId);
+            enrollment.setCourseId(courseId);
+            enrollment.setEnrollTime(LocalDateTime.now());
+            enrollment.setStatus(1);
+            enrollmentMapper.insert(enrollment);
+        }//更新课程已选人数
+        course.setSelectedCount(course.getSelectedCount() +1);
         courseMapper.updateById(course);
-
         return true;
     }
-    // 检查学生是否存在上课时间冲突
-    private boolean hasTimeConflict(Long studentId, Course newCourse) {
 
-        LambdaQueryWrapper<Enrollment> wrapper =
-                new LambdaQueryWrapper<>();
-
-        wrapper.eq(Enrollment::getStudentId, studentId)
-                .eq(Enrollment::getStatus, 1);
-
-        List<Enrollment> enrollments =
-                enrollmentMapper.selectList(wrapper);
-
-        for (Enrollment enrollment : enrollments) {
-
-            // 跳过同一门课程
-            if (enrollment.getCourseId().equals(newCourse.getId())) {
-                continue;
-            }
-
-            Course oldCourse = courseMapper.selectById(enrollment.getCourseId());
-
-            if (oldCourse == null) {
-                continue;
-            }
-
-            // 同一天，并且节次有重叠
-            if (oldCourse.getClassDay().equals(newCourse.getClassDay())
-                    && oldCourse.getStartSection() <= newCourse.getEndSection()
-                    && newCourse.getStartSection() <= oldCourse.getEndSection()) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-    // 退课
     @Override
     @Transactional
     public boolean dropCourse(Long studentId, Long courseId) {
-        LambdaQueryWrapper<Enrollment> wrapper = new LambdaQueryWrapper<>();
-        // 先锁定课程记录
+        //锁定课程，避免并发选课和退课导致人数不一致
         Course course = courseMapper.selectByIdForUpdate(courseId);
+        //检查课程是否存在
         if (course == null) {
             return false;
         }
-        wrapper.eq(Enrollment::getStudentId, studentId)
-                .eq(Enrollment::getCourseId, courseId)
-                .eq(Enrollment::getStatus, 1);
-
-        Enrollment enrollment =
-                enrollmentMapper.selectOne(wrapper);
-
+        LambdaQueryWrapper<Enrollment> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Enrollment::getStudentId, studentId).eq(Enrollment::getCourseId, courseId).eq(Enrollment::getStatus, 1);
+        Enrollment enrollment = enrollmentMapper.selectOne(wrapper);
+        //如果没有有效选课记录，说明无法退课
         if (enrollment == null) {
             return false;
         }
+        //修改选课记录状态为已退课
         enrollment.setStatus(0);
+        enrollmentMapper.updateById(enrollment);
+        //更新课程已选人数
         course.setSelectedCount(
                 Math.max(0, course.getSelectedCount() - 1)
         );
-
-        enrollmentMapper.updateById(enrollment);
         courseMapper.updateById(course);
-
         return true;
     }
 
-    // 查询学生选课记录
     @Override
     public List<Enrollment> listByStudentId(Long studentId) {
-
-        LambdaQueryWrapper<Enrollment> wrapper =
-                new LambdaQueryWrapper<>();
-
-        wrapper.eq(Enrollment::getStudentId, studentId)
-                .orderByDesc(Enrollment::getEnrollTime);
-
-        return enrollmentMapper.selectList(wrapper);
+        return List.of();
     }
+
+    @Override
+    public List<AdminEnrollmentResponse> listAllEnrollments() {
+        return List.of();
+    }
+    // 检查学生已选课程是否与新课程时间冲突
+    private boolean hasTimeConflict(Long studentId, Course newCourse) {
+    LambdaQueryWrapper<Enrollment> wrapper = new LambdaQueryWrapper<>();
+    wrapper.eq(Enrollment::getStudentId, studentId).eq(Enrollment::getStatus,1);
+    List<Enrollment> enrollments = enrollmentMapper.selectList(wrapper);
+    for(Enrollment enrollment : enrollments){
+        // 查询已选记录对应的课程
+        Course oldCourse = courseMapper.selectById(enrollment.getCourseId());
+        // 如果课程不存在，跳过
+        if (oldCourse == null) {
+            continue;
+        }
+        // 判断上课日期是否相同，且上课节次是否重叠
+        if (oldCourse.getClassDay().equals(newCourse.getClassDay())
+                && oldCourse.getStartSection() <= newCourse.getEndSection()
+                && newCourse.getStartSection() <= oldCourse.getEndSection()) {
+            return true;
+        }
+    }
+        // 所有课程检查完毕，没有冲突
+        return false;
+    }
+
+
 }
