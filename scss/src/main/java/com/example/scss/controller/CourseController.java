@@ -11,139 +11,85 @@ import java.util.List;
 @RestController
 @RequestMapping("/course")
 public class CourseController {
-
     private final CourseService courseService;
-
     public CourseController(CourseService courseService) {
         this.courseService = courseService;
-    }
-
-    // 查询所有课程
+    }//查询所有课程
     @GetMapping("/list")
-    public Result<List<Course>> listCourses() {
+    public Result<List<Course>> listCourses(){
         return Result.success(courseService.listCourses());
     }
-
-    // 根据 ID 查询课程
+    // 根据ID查询课程
     @GetMapping("/{id}")
-    public Result<Course> getCourseById(@PathVariable Long id) {
+    public Result<Course> getCourseById(@PathVariable Long id){
         Course course = courseService.getCourseById(id);
-
-        if (course == null) {
+        if(course == null){
             return Result.error(404, "课程不存在");
         }
-
         return Result.success(course);
-    }
-
-    // 新增课程
-    @PostMapping("/add")
-    public Result<String> addCourse(@RequestBody Course course) {
-        String error = validateCourse(course);
-        if (error != null) {
-            return Result.error(400, error);
+    }@PostMapping("/add")
+    public Result<String> addCourse(@RequestBody Course course){
+        if (course == null) {
+            return Result.error(400, "课程信息不能为空");
         }
-
+        if (course.getCourseName() == null
+                || course.getCourseName().isBlank()) {
+            return Result.error(400, "课程名称不能为空");
+        }
+        if (course.getTeacher() == null
+                || course.getTeacher().isBlank()) {
+            return Result.error(400, "教师名称不能为空");
+        }
+        if (course.getCapacity() == null || course.getCapacity() <= 0) {
+            return Result.error(400, "课程容量必须大于0");
+        }
         boolean success = courseService.addCourse(course);
-
         if (!success) {
-            return Result.error(400, "课程新增失败");
+            return Result.error(400, "新增课程失败");
         }
-
-        return Result.success("课程新增成功");
+        return Result.success("新增课程成功");
     }
-
-    // 修改课程
     @PutMapping("/update")
-    public Result<String> updateCourse(@RequestBody Course course) {
-        if (course.getId() == null || course.getId() <= 0) {
+    public Result<String> updateCourse(@RequestBody Course course){
+        if (course == null || course.getId() == null) {
             return Result.error(400, "课程ID不合法");
         }
-
-        String error = validateCourse(course);
-        if (error != null) {
-            return Result.error(400, error);
+        if (course.getCourseName() == null
+                || course.getCourseName().isBlank()) {
+            return Result.error(400, "课程名称不能为空");
         }
-
+        if (course.getTeacher() == null
+                || course.getTeacher().isBlank()) {
+            return Result.error(400, "教师名称不能为空");
+        }
         boolean success = courseService.updateCourse(course);
-
         if (!success) {
-            return Result.error(400, "课程不存在或修改失败");
+            return Result.error(400, "修改课程失败");
         }
-
-        return Result.success("课程修改成功");
+        return Result.success("修改课程成功");
     }
-
-    // 删除课程
     @DeleteMapping("/{id}")
-    public Result<String> deleteCourse(@PathVariable Long id) {
-        if (id == null || id <= 0) {
-            return Result.error(400, "课程ID不合法");
+    public  Result<String> deleteCourseById(@PathVariable Long id){
+        if(id == null|| id<= 0){
+            return Result.error(400, "课程ID不能为空为零");
         }
-
         boolean success = courseService.deleteCourse(id);
-
-        if (!success) {
-            return Result.error(404, "课程不存在或删除失败");
+        if(!success){
+            return Result.error(400, "删除课程失败，课程不存在或存在有效选课记录");
         }
-
-        return Result.success("课程删除成功");
+        return Result.success("删除课程成功");
     }
-
-    // 分页查询 + 关键词搜索
     @GetMapping("/page")
-    public Result<IPage<Course>> pageCourses(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "1") Long pageNum,
-            @RequestParam(defaultValue = "10") Long pageSize) {
-
+    public Result<IPage<Course>> pageCourses(@RequestParam (required = false) String keyword,
+                                            @RequestParam (defaultValue = "1") Long pageNum,
+                                            @RequestParam (defaultValue = "10") Long pageSize
+                         ){
         if (pageNum < 1 || pageSize < 1 || pageSize > 100) {
             return Result.error(400, "分页参数不合法");
         }
-
-        IPage<Course> page = courseService.pageCourses(
-                keyword, pageNum, pageSize
-        );
-
+        IPage<Course> page = courseService.pageCourses(keyword, pageNum, pageSize);
         return Result.success(page);
     }
 
-    // 校验课程信息
-    private String validateCourse(Course course) {
-        if (course.getCourseName() == null ||
-                course.getCourseName().trim().isEmpty()) {
-            return "课程名称不能为空";
-        }
-
-        if (course.getTeacher() == null ||
-                course.getTeacher().trim().isEmpty()) {
-            return "教师姓名不能为空";
-        }
-
-        if (course.getCredit() == null ||
-                course.getCredit().signum() < 0) {
-            return "课程学分不能小于0";
-        }
-
-        if (course.getCapacity() == null ||
-                course.getCapacity() < 1) {
-            return "课程容量必须大于0";
-        }
-
-        if (course.getClassDay() == null ||
-                course.getClassDay() < 1 ||
-                course.getClassDay() > 7) {
-            return "上课星期必须在1到7之间";
-        }
-
-        if (course.getStartSection() == null ||
-                course.getEndSection() == null ||
-                course.getStartSection() < 1 ||
-                course.getEndSection() < course.getStartSection()) {
-            return "上课节次不合法";
-        }
-
-        return null;
-    }
 }
 

@@ -33,9 +33,8 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     @Override
     @Transactional
     public boolean selectCourse(Long studentId, Long courseId) {
-
         // 检查课程是否存在
-        Course course = courseMapper.selectById(courseId);
+        Course course = courseMapper.selectByIdForUpdate(courseId);
         if (course == null || course.getStatus() == null
                 || course.getStatus() != 1) {
             return false;
@@ -45,15 +44,10 @@ public class EnrollmentServiceImpl implements EnrollmentService {
             throw new IllegalArgumentException("与已选课程上课时间冲突，不能重复选课");
         }
         // 检查是否已经选过
-        LambdaQueryWrapper<Enrollment> wrapper =
-                new LambdaQueryWrapper<>();
-
+        LambdaQueryWrapper<Enrollment> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Enrollment::getStudentId, studentId)
                 .eq(Enrollment::getCourseId, courseId);
-
-        Enrollment oldEnrollment =
-                enrollmentMapper.selectOne(wrapper);
-
+        Enrollment oldEnrollment = enrollmentMapper.selectOne(wrapper);
         if (oldEnrollment != null) {
             // 已经选课，不允许重复选
             if (oldEnrollment.getStatus() != null
@@ -115,8 +109,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                 continue;
             }
 
-            Course oldCourse =
-                    courseMapper.selectById(enrollment.getCourseId());
+            Course oldCourse = courseMapper.selectById(enrollment.getCourseId());
 
             if (oldCourse == null) {
                 continue;
@@ -136,10 +129,12 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     @Override
     @Transactional
     public boolean dropCourse(Long studentId, Long courseId) {
-
-        LambdaQueryWrapper<Enrollment> wrapper =
-                new LambdaQueryWrapper<>();
-
+        LambdaQueryWrapper<Enrollment> wrapper = new LambdaQueryWrapper<>();
+        // 先锁定课程记录
+        Course course = courseMapper.selectByIdForUpdate(courseId);
+        if (course == null) {
+            return false;
+        }
         wrapper.eq(Enrollment::getStudentId, studentId)
                 .eq(Enrollment::getCourseId, courseId)
                 .eq(Enrollment::getStatus, 1);
@@ -150,13 +145,6 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         if (enrollment == null) {
             return false;
         }
-
-        Course course = courseMapper.selectById(courseId);
-
-        if (course == null) {
-            return false;
-        }
-
         enrollment.setStatus(0);
         course.setSelectedCount(
                 Math.max(0, course.getSelectedCount() - 1)

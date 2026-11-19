@@ -10,7 +10,7 @@ import java.util.List;
 
 @Mapper
 public interface EnrollmentMapper extends BaseMapper<Enrollment> {
-    @Select("SELECT COUNT(*) FROM enrollment WHERE course_id = #{courseId}")
+    @Select("SELECT COUNT(*) FROM enrollment WHERE course_id = #{courseId} AND status = 1")
     Long countByCourseId(Long courseId);
     @Select("""
     SELECT
