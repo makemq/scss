@@ -1,11 +1,10 @@
 import { createApp } from 'vue'
 import App from './App.vue'
-
-// 注意：根据你左侧的目录，你的全局样式文件是 assets/main.css
+import { setupAxiosInterceptors } from './utils/axiosInterceptor'
 import './assets/main.css'
-
+setupAxiosInterceptors()
 createApp(App).mount('#app')
-
+//注册拦截器
 
 
 

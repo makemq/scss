@@ -36,10 +36,10 @@ const handleLoginSuccess = async (token) => {
     }
   } catch (error) {
     const status = error.response?.status
-
     // Token 失效或无权限时，清除登录状态
     if (status === 401 || status === 403) {
-      localStorage.removeItem('token')
+      localStorage.removeItem('accessToken')
+      localStorage.removeItem('refreshToken')
       isLoggedIn.value = false
       currentUser.value = null
 

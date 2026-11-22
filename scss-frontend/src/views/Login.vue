@@ -103,7 +103,7 @@ const handleLogin = async () => {
       localStorage.setItem('refreshToken', refreshToken)
       successMessage.value = '登录成功！'
       //传token 给app.vue
-      emit('login-success', token)
+      emit('login-success', accessToken)
     } else {
       errorMessage.value =
           response.data.message || '登录失败'
