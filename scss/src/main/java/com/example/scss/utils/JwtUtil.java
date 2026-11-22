@@ -1,62 +1,42 @@
 package com.example.scss.utils;
+
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
 import javax.crypto.SecretKey;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
 import java.util.Date;
 
-@Component // 必须加这个
+@Component
 public class JwtUtil {
-
-    // 1. 读取环境变量，
-    @Value("${JWT_SECRET:scss-secret-key-2024-very-long-and-secure-123456}")
+    @Value("${JWT_SECRET}")
     private String secretString;
-
-    // 2. 有效期，单位毫秒 (这里默认24小时)
     @Value("${JWT_EXPIRATION:86400000}")
     private long expiration;
-
-    // 3. 动态生成 Key
-    private Key getKey() {
+    //字符串密钥变成签名密钥
+    private SecretKey getKey(){
         return Keys.hmacShaKeyFor(secretString.getBytes(StandardCharsets.UTF_8));
     }
-
-    public String generateToken(String username) {
-        return Jwts.builder()
-                .subject(username)
-                .issuedAt(new Date())
-
-                .expiration(new Date(System.currentTimeMillis() + expiration))
-
-                .signWith(getKey(), SignatureAlgorithm.HS256)
-                .compact();
+    //生成token
+    public String  generateToken(String username){
+        return Jwts.builder().subject(username).issuedAt(new Date()).
+                expiration(new Date(System.currentTimeMillis() +expiration))
+                .signWith(getKey()).compact();
+    }
+    //解析token
+    public Claims parseToken(String token){
+        return Jwts.parser()//创建 JWT 解析器
+                .verifyWith(getKey())//指定验证签名使用的密钥
+                .build()//构建解析器
+                .parseSignedClaims(token)//解析并验证 Token
+                .getPayload();//获取 Token 中的载荷信息
     }
 
-    public Claims parseToken(String token) {
-        return Jwts.parser()
 
-                .verifyWith((SecretKey) getKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-    }
 
-    public String getUsernameFromToken(String token) {
-        try {
-            Claims claims = parseToken(token);
-            return claims.getSubject();
-        } catch (Exception e) {
-            return null;
-        }
-    }
+
 }
