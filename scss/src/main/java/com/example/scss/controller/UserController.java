@@ -1,6 +1,7 @@
 package com.example.scss.controller;
 import com.example.scss.annotation.RequireRole;
 import com.example.scss.config.Result;
+import com.example.scss.dto.RefreshRequest;
 import com.example.scss.dto.RegisterRequest;
 import com.example.scss.entity.SysUser;
 import com.example.scss.service.UserService;
@@ -33,42 +34,37 @@ public class UserController {
     }
     @PostMapping("/register")
     public Result register(@RequestBody RegisterRequest request) {
-
         if (request == null) {
             return Result.error(400, "注册信息不能为空");
         }
-
         if (request.getUsername() == null
                 || request.getUsername().isBlank()) {
             return Result.error(400, "用户名不能为空");
         }
-
         if (request.getPassword() == null
                 || request.getPassword().isBlank()) {
             return Result.error(400, "密码不能为空");
         }
-
         try {
             userService.register(
                     request.getUsername(),
                     request.getPassword()
             );
-
             return Result.success("注册成功");
-
         } catch (IllegalArgumentException e) {
             return Result.error(400, e.getMessage());
         }
     }
     @PostMapping("/login")
     public Result login(@RequestBody LoginRequest request) {
-
+        //检查登录
         if (request == null
                 || request.getUsername() == null
-                || request.getPassword() == null) {
-            return Result.error("用户名和密码不能为空");
+                || request.getUsername().isBlank()
+                || request.getPassword() == null
+                || request.getPassword().isBlank()) {
+            return Result.error(400, "用户名和密码不能为空");
         }
-
         // 验证用户名和密码
         boolean valid = userService.verifyPassword(
                 request.getUsername(),
@@ -78,28 +74,51 @@ public class UserController {
         if (!valid) {
             return Result.error(401, "用户名或密码错误");
         }
-        if (request == null) {
-            return Result.error(400, "登录信息不能为空");
-        }
-
-        if (request.getUsername() == null
-                || request.getUsername().isBlank()) {
-            return Result.error(400, "用户名不能为空");
-        }
-
-        if (request.getPassword() == null
-                || request.getPassword().isBlank()) {
-            return Result.error(400, "密码不能为空");
-        }
-
-        // 验证成功，生成 JWT Token
-        String token = jwtUtil.generateToken(
+        // 生成 JWT Token
+        String accessToken = jwtUtil.generateAccessToken(
                 request.getUsername()
         );
-
-        return Result.success(token);
+        String refreshToken = jwtUtil.generateRefreshToken(
+                request.getUsername()
+        );
+        return Result.success(java.util.Map.of(
+                "accessToken", accessToken,
+                "refreshToken", refreshToken
+        ));
     }
+    }
+    @PostMapping("//refresh")
+    public Result refresh(@RequestBody RefreshRequest request) {
+        if (request == null
+                || request.getRefreshToken() == null
+                || request.getRefreshToken().isBlank()) {
+            return Result.error(400, "Refresh Token 不能为空");
+        }
+        //获取token
+        String refreshToken = request.getRefreshToken();
+        String tokenType;
+        String username;
+        try {
+            tokenType = jwtUtil.getTokenType(refreshToken);
+            username = jwtUtil.getUsernameFromToken(refreshToken);
+        } catch (Exception e) {
+            return Result.error(401, "Refresh Token 无效或已过期");
+        }
+        //验证token
+        if (!"REFRESH".equals(tokenType)) {
+            return Result.error(401, "Token 类型错误");
+        }
+        SysUser user = userService.findByUsername(username);
+        if (user == null) {
+            return Result.error(401, "用户不存在");
+        }
+        //生成新的访问token
+        String newAccessToken = jwtUtil.generateAccessToken(username);
+        return Result.success(java.util.Map.of(
+                "accessToken", newAccessToken
+        ));
 
+    }
     @GetMapping("/me")
     public Result<UserProfileResponse> me(HttpServletRequest request) {
 

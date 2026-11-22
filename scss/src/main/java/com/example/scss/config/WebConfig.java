@@ -13,6 +13,11 @@ public class WebConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         InterceptorRegistration registration = registry.addInterceptor(jwtInterceptor);
         registration.addPathPatterns("/**");
-        registration.excludePathPatterns("/user/login", "/user/register");
+        registration.excludePathPatterns(
+                "/user/login",
+                "/user/register",
+                "/user/refresh"
+        );
+
     }
 }
