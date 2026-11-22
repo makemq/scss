@@ -1,4 +1,3 @@
-
 package com.example.scss.config;
 import com.example.scss.annotation.RequireRole;
 import org.springframework.web.method.HandlerMethod;
@@ -14,63 +13,62 @@ import org.springframework.web.servlet.HandlerInterceptor;
 
 @Component
 public class JwtInterceptor implements HandlerInterceptor {
-
-    private final JwtUtil jwtUtil;
     @Autowired
-    private UserService userService;
-    public JwtInterceptor(JwtUtil jwtUtil) {
+    private final UserService userService ;
+    private final JwtUtil jwtUtil;
+    public JwtInterceptor(JwtUtil jwtUtil,UserService userService) {
         this.jwtUtil = jwtUtil;
+        this.userService = userService;
     }
+    private boolean unauthorized(HttpServletResponse response) throws Exception{
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);//设置HTTP 401
+        response.setCharacterEncoding("UTF-8");
+        response.setContentType("application/json;charset=UTF-8");
 
+        response.getWriter().write(//前端返回信息
+                "{\"code\":401,\"message\":\"未登录或登录已过期\",\"data\":null}"
+        );
+
+        return false;
+    }
+    //spring MVC
     @Override
-    public boolean preHandle(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            Object handler) throws Exception {
-
-        // 1. 获取请求头中的 Token
+    public boolean preHandle(HttpServletRequest request,HttpServletResponse response,Object handler) throws Exception {
+        //获取token
         String authHeader = request.getHeader("Authorization");
-
-        // 2. 检查 Token 是否存在，以及格式是否正确
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        //检查token
+        if(authHeader == null || !authHeader.startsWith("Bearer ")){
             return unauthorized(response);
         }
-
-        // 3. 去掉 Bearer 得到真正的 Token
-        String token = authHeader.substring(7);
-
-        // 4. 验证 Token，获取用户名
-        String username = jwtUtil.getUsernameFromToken(token);
-
-        // 5. Token 无效，拒绝访问
-        if (username == null || username.isBlank()) {
+        //截取token
+        String  token = authHeader.substring(7);
+        String username;
+        try{
+            username = jwtUtil.getUsernameFromToken(token);
+        }catch (Exception e){
             return unauthorized(response);
         }
-        // 根据用户名查询用户信息
+        //判断用户名
+        if(username == null||username.isBlank()){
+            return unauthorized(response);
+        }
+        //查询判断
         SysUser user = userService.findByUsername(username);
-
-// 用户不存在，拒绝访问
         if (user == null) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return false;
+            return unauthorized(response);
         }
-        request.setAttribute("username", username);
-        request.setAttribute("role", user.getRole());
-        request.setAttribute("studentId", user.getStudentId());
-
+        //保存
+        request.setAttribute("username",username);
+        request.setAttribute("role",user.getRole());
+        request.setAttribute("studentId",user.getStudentId());
+        //权限判断
+        //获取注解，读取角色
         if (handler instanceof HandlerMethod handlerMethod) {
-
-            // 获取方法上的角色权限注解
-            RequireRole requireRole =
-                    handlerMethod.getMethodAnnotation(RequireRole.class);
-
-            // 如果接口声明了角色要求，就检查当前用户角色
+            RequireRole requireRole = handlerMethod.getMethodAnnotation(RequireRole.class);
             if (requireRole != null) {
-
-                String requiredRole = requireRole.value();
-                String currentRole = user.getRole();
-
-                if (!requiredRole.equals(currentRole)) {
+                String requiredRole = requireRole.value();//获取要求角色
+                String currentRole = user.getRole();//获取当前角色
+                if (!requiredRole.equals(currentRole)) {//比较角色
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                     response.setContentType("application/json;charset=UTF-8");
                     response.getWriter().write(
@@ -79,25 +77,10 @@ public class JwtInterceptor implements HandlerInterceptor {
                     return false;
                 }
             }
+
         }
-
         return true;
-
-
     }
 
-    private boolean unauthorized(HttpServletResponse response)
-            throws Exception {
-
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setCharacterEncoding("UTF-8");
-        response.setContentType("application/json;charset=UTF-8");
-
-        response.getWriter().write(
-                "{\"code\":401,\"message\":\"未登录或登录已过期\",\"data\":null}"
-        );
-
-        return false;
-    }
 }
 

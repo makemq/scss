@@ -35,7 +35,9 @@ public class JwtUtil {
                 .parseSignedClaims(token)//解析并验证 Token
                 .getPayload();//获取 Token 中的载荷信息
     }
-
+    public String getUsernameFromToken(String token){
+        return parseToken(token).getSubject();
+    }
 
 
 
