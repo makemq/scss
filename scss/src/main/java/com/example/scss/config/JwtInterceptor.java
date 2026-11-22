@@ -43,9 +43,15 @@ public class JwtInterceptor implements HandlerInterceptor {
         //截取token
         String  token = authHeader.substring(7);
         String username;
-        try{
+        String tokenType;
+        try {
             username = jwtUtil.getUsernameFromToken(token);
-        }catch (Exception e){
+            tokenType = jwtUtil.getTokenType(token);
+        } catch (Exception e) {
+            return unauthorized(response);
+        }
+// 只允许 Access Token 访问业务接口
+        if (!"ACCESS".equals(tokenType)) {
             return unauthorized(response);
         }
         //判断用户名

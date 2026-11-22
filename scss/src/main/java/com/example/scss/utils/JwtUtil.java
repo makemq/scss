@@ -15,17 +15,36 @@ import java.util.Date;
 public class JwtUtil {
     @Value("${JWT_SECRET}")
     private String secretString;
-    @Value("${JWT_EXPIRATION:86400000}")
-    private long expiration;
+    @Value("${JWT_ACCESS_EXPIRATION:900000}")
+    private long accessExpiration;
+    @Value("${JWT_REFRESH_EXPIRATION:604800000}")
+    private long refreshExpiration;
     //字符串密钥变成签名密钥
     private SecretKey getKey(){
         return Keys.hmacShaKeyFor(secretString.getBytes(StandardCharsets.UTF_8));
     }
     //生成token
-    public String  generateToken(String username){
-        return Jwts.builder().subject(username).issuedAt(new Date()).
-                expiration(new Date(System.currentTimeMillis() +expiration))
-                .signWith(getKey()).compact();
+    public String generateAccessToken(String username) {
+        return Jwts.builder()
+                .subject(username)
+                .claim("tokenType", "ACCESS")//标记访问token
+                .issuedAt(new Date())//签发时间
+                .expiration(new Date(System.currentTimeMillis() + accessExpiration))
+                .signWith(getKey())//使用密钥签名
+                .compact();//生成字符串
+    }
+    public String generateRefreshToken(String username) {
+        return Jwts.builder()
+                .subject(username)
+                .claim("tokenType", "REFRESH")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + refreshExpiration))
+                .signWith(getKey())
+                .compact();
+    }
+    //获取token
+    public String getTokenType(String token) {
+        return parseToken(token).get("tokenType", String.class);
     }
     //解析token
     public Claims parseToken(String token){
