@@ -94,15 +94,15 @@ const handleLogin = async () => {
         }
     )
 
-    // 4. 判断登录结果
+    //判断登录结果
     if (response.data.code === 200) {
-      const token = response.data.data
-
-      // 5. 保存 JWT Token
-      localStorage.setItem('token', token)
-
+      const accessToken = response.data.data.accessToken
+      const refreshToken = response.data.data.refreshToken
+      //保存JWT Token
+      localStorage.setItem('accessToken', accessToken)
+      localStorage.setItem('refreshToken', refreshToken)
       successMessage.value = '登录成功！'
-
+      //传token 给app.vue
       emit('login-success', token)
     } else {
       errorMessage.value =

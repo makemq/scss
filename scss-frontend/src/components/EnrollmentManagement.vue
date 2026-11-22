@@ -1,19 +1,15 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
-
 const courses = ref([])
 const myEnrollments = ref([])
 const loading = ref(false)
-
 const pageNum = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
-
 const getHeaders = () => ({
-  Authorization: `Bearer ${localStorage.getItem('token')}`
+  Authorization: `Bearer ${localStorage.getItem('accessToken')}`
 })
-
 // 查询课程和我的选课记录
 const loadData = async () => {
   loading.value = true

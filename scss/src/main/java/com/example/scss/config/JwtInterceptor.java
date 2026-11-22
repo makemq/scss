@@ -50,7 +50,7 @@ public class JwtInterceptor implements HandlerInterceptor {
         } catch (Exception e) {
             return unauthorized(response);
         }
-// 只允许 Access Token 访问业务接口
+        //允许Access Token 访问业务接口
         if (!"ACCESS".equals(tokenType)) {
             return unauthorized(response);
         }

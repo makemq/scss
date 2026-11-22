@@ -1,19 +1,14 @@
-
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
-
 // 学生列表
 const students = ref([])
-
 // 分页信息
 const pageNum = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
-
 // 搜索关键词
 const keyword = ref('')
-
 // 加载状态
 const loading = ref(false)
 // 新增学生表单
@@ -46,10 +41,8 @@ const updateStudent = async () => {
     alert('姓名和学号不能为空')
     return
   }
-
   try {
-    const token = localStorage.getItem('token')
-
+    const token = localStorage.getItem('accessToken')
     const response = await axios.put(
         'http://localhost:8080/student/update',
         {
@@ -82,8 +75,7 @@ const deleteStudent = async (id) => {
   }
 
   try {
-    const token = localStorage.getItem('token')
-
+    const token = localStorage.getItem('accessToken')
     const response = await axios.delete(
         `http://localhost:8080/student/${id}`,
         {
@@ -111,8 +103,7 @@ const addStudent = async () => {
   }
 
   try {
-    const token = localStorage.getItem('token')
-
+    const token = localStorage.getItem('accessToken')
     const response = await axios.post(
         'http://localhost:8080/student/add',
         {
@@ -144,8 +135,7 @@ const loadStudents = async () => {
   loading.value = true
 
   try {
-    const token = localStorage.getItem('token')
-
+    const token = localStorage.getItem('accessToken')
     const response = await axios.get(
         'http://localhost:8080/student/page',
         {

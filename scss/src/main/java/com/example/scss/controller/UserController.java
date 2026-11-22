@@ -9,14 +9,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import com.example.scss.dto.LoginRequest;
-import com.example.scss.service.UserService;
 import com.example.scss.utils.JwtUtil;
 import com.example.scss.dto.UserProfileResponse;
 import com.example.scss.entity.Student;
 import com.example.scss.mapper.StudentMapper;
 @RestController
 @RequestMapping("/user")
-// @CrossOrigin //
 public class UserController {
     @Autowired
     private StudentMapper studentMapper;
@@ -70,11 +68,11 @@ public class UserController {
                 request.getUsername(),
                 request.getPassword()
         );
-
         if (!valid) {
             return Result.error(401, "用户名或密码错误");
         }
         // 生成 JWT Token
+        //生成access token
         String accessToken = jwtUtil.generateAccessToken(
                 request.getUsername()
         );
@@ -86,8 +84,7 @@ public class UserController {
                 "refreshToken", refreshToken
         ));
     }
-    }
-    @PostMapping("//refresh")
+    @PostMapping("/refresh")
     public Result refresh(@RequestBody RefreshRequest request) {
         if (request == null
                 || request.getRefreshToken() == null
@@ -108,6 +105,7 @@ public class UserController {
         if (!"REFRESH".equals(tokenType)) {
             return Result.error(401, "Token 类型错误");
         }
+        //刷新token
         SysUser user = userService.findByUsername(username);
         if (user == null) {
             return Result.error(401, "用户不存在");
@@ -133,12 +131,10 @@ public class UserController {
         if (user == null) {
             return Result.error("用户不存在");
         }
-
         UserProfileResponse profile = new UserProfileResponse();
         profile.setUsername(user.getUsername());
         profile.setRole(user.getRole());
         profile.setStudentId(user.getStudentId());
-
         // 如果是学生账号，查询对应的学生档案
         if ("STUDENT".equals(user.getRole()) && user.getStudentId() != null) {
             Student student = studentMapper.selectById(user.getStudentId());
@@ -148,9 +144,9 @@ public class UserController {
                 profile.setStudentNo(student.getStudentNo());
             }
         }
-
         return Result.success(profile);
+    }
     }
 
 
-}
+

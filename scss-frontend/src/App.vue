@@ -7,12 +7,11 @@ import StudentDashboard from './views/StudentDashboard.vue'
 const isLoggedIn = ref(false)
 const currentUser = ref(null)
 const loadingUser = ref(false)
-// 页面启动时恢复登录状态
+//页面启动时恢复登录状态
 onMounted(() => {
-  const token = localStorage.getItem('token')
-
-  if (token) {
-    handleLoginSuccess(token)
+  const accessToken = localStorage.getItem('accessToken')
+  if (accessToken) {
+    handleLoginSuccess(accessToken)
   }
 })
 // 登录成功后执行
@@ -53,9 +52,10 @@ const handleLoginSuccess = async (token) => {
     loadingUser.value = false
   }
 }
-// 退出登录
+//退出登录
 const handleLogout = () => {
-  localStorage.removeItem('token')
+  localStorage.removeItem('accessToken')
+  localStorage.removeItem('refreshToken')
   currentUser.value = null
   isLoggedIn.value = false
 }

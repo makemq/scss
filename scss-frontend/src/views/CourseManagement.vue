@@ -23,12 +23,10 @@ const emptyCourse = () => ({
   startSection: 1,
   endSection: 2
 })
-
 const newCourse = ref(emptyCourse())
 const editCourse = ref({ id: null, ...emptyCourse() })
-
 const getHeaders = () => ({
-  Authorization: `Bearer ${localStorage.getItem('token')}`
+  Authorization: `Bearer ${localStorage.getItem('accessToken')}`
 })
 
 // 查询课程

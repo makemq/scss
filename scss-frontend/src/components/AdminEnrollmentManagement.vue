@@ -1,18 +1,14 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
-
 const records = ref([])
 const loading = ref(false)
 const errorMessage = ref('')
-
 const loadRecords = async () => {
   loading.value = true
   errorMessage.value = ''
-
   try {
-    const token = localStorage.getItem('token')
-
+    const token = localStorage.getItem('accessToken')
     const response = await axios.get(
         'http://localhost:8080/enrollment/admin/list',
         {
