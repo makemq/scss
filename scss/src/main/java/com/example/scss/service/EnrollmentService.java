@@ -1,5 +1,6 @@
 package com.example.scss.service;
 
+import com.example.scss.entity.Course;
 import com.example.scss.entity.Enrollment;
 import com.example.scss.dto.AdminEnrollmentResponse;
 import java.util.List;
@@ -14,4 +15,6 @@ public interface EnrollmentService {
     List<Enrollment> listByStudentId(Long studentId);
     // 管理员查询全部选课记录
     List<AdminEnrollmentResponse> listAllEnrollments();
+    //查询学生个人课表
+    List<Course> getStudentSchedule(Long studentId);
 }

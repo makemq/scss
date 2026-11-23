@@ -2,6 +2,7 @@ package com.example.scss.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.example.scss.dto.AdminEnrollmentResponse;
+import com.example.scss.entity.Course;
 import com.example.scss.entity.Enrollment;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
@@ -29,4 +30,21 @@ public interface EnrollmentMapper extends BaseMapper<Enrollment> {
     ORDER BY e.enroll_time DESC
     """)
     List<AdminEnrollmentResponse> selectAllEnrollmentDetails();
+    @Select("""
+    SELECT
+        c.id AS id,
+        c.course_name AS courseName,
+        c.teacher AS teacher,
+        c.credit AS credit,
+        c.class_day AS classDay,
+        c.start_section AS startSection,
+        c.end_section AS endSection
+    FROM enrollment e
+    INNER JOIN course c ON e.course_id = c.id
+    WHERE e.student_id = #{studentId}
+      AND e.status = 1
+      AND c.status = 1
+    ORDER BY c.class_day, c.start_section
+    """)
+    List<Course> selectStudentSchedule(Long studentId);
 }

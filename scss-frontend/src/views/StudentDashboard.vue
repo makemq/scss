@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import EnrollmentManagement from '../components/EnrollmentManagement.vue'
+import StudentSchedule from '../components/StudentSchedule.vue'
 const props = defineProps({
   user: {
     type: Object,
@@ -26,7 +27,7 @@ const currentPage = ref('首页')
     <div class="main">
       <aside class="sidebar">
         <div
-            v-for="item in ['首页', '选课管理', '个人中心']"
+            v-for="item in ['首页', '选课管理', '个人课表', '个人中心']"
             :key="item"
             :class="['menu-item', { active: currentPage === item }]"
             @click="currentPage = item"
@@ -45,6 +46,9 @@ const currentPage = ref('首页')
 
         <div v-else-if="currentPage === '选课管理'">
           <EnrollmentManagement />
+        </div>
+        <div v-else-if="currentPage === '个人课表'">
+          <StudentSchedule />
         </div>
 
         <div v-else-if="currentPage === '个人中心'" class="profile-card">

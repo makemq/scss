@@ -103,6 +103,11 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         //联表查询
         return enrollmentMapper.selectAllEnrollmentDetails();
     }
+    //个人课表查询
+    @Override
+    public List<Course> getStudentSchedule(Long studentId) {
+        return enrollmentMapper.selectStudentSchedule(studentId);
+    }
     // 检查学生已选课程是否与新课程时间冲突
     private boolean hasTimeConflict(Long studentId, Course newCourse) {
     LambdaQueryWrapper<Enrollment> wrapper = new LambdaQueryWrapper<>();

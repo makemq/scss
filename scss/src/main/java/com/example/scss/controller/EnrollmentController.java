@@ -2,6 +2,7 @@ package com.example.scss.controller;
 import com.example.scss.annotation.RequireRole;
 import com.example.scss.config.Result;
 import com.example.scss.dto.AdminEnrollmentResponse;
+import com.example.scss.entity.Course;
 import com.example.scss.entity.Enrollment;
 import com.example.scss.service.EnrollmentService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -61,6 +62,16 @@ public Result<List<Enrollment>> myEnrollments(HttpServletRequest request){
     return Result.success(
             enrollmentService.listByStudentId(studentId)
     );
+}
+@GetMapping("/my/schedule")
+@RequireRole("STUDENT")
+public Result<List<Course>> getMySchedule(HttpServletRequest request){
+        Long studentId = (long) request.getAttribute("studentId");
+    if (studentId == null) {
+        return Result.error(400, "当前账号尚未绑定学生档案");
+    }
+        List<Course> schedule = enrollmentService.getStudentSchedule(studentId);
+        return Result.success(schedule);
 }
 @GetMapping("/admin/list")
 @RequireRole("ADMIN")//管理员查课
