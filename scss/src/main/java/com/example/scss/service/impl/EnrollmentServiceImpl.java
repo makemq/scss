@@ -8,7 +8,6 @@ import com.example.scss.mapper.EnrollmentMapper;
 import com.example.scss.service.EnrollmentService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.example.scss.entity.Student;
 import com.example.scss.mapper.StudentMapper;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -101,27 +100,8 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     }
     @Override
     public List<AdminEnrollmentResponse> listAllEnrollments() {
-        //查询选课记录
-        List<Enrollment> enrollments = enrollmentMapper.selectList(new LambdaQueryWrapper<Enrollment>().orderByDesc(Enrollment::getEnrollTime));
-        //返回结果集合
-        List<AdminEnrollmentResponse> result = new java.util.ArrayList<>();
-        for(Enrollment enrollment : enrollments){
-            Student student = studentMapper.selectById(enrollment.getStudentId());
-            Course course = courseMapper.selectById(enrollment.getCourseId());
-            //创建DTO组建数据
-            AdminEnrollmentResponse response = new AdminEnrollmentResponse();
-            response.setId(enrollment.getId());
-            response.setStudentId(enrollment.getStudentId());
-            response.setCourseId(enrollment.getCourseId());
-            response.setEnrollTime(enrollment.getEnrollTime());
-            response.setStatus(enrollment.getStatus());
-            if(course != null){
-                response.setCourseName(course.getCourseName());
-                response.setTeacher(course.getTeacher());
-            }
-            result.add(response);//加入集合
-        }
-        return result;//返回结果
+        //联表查询
+        return enrollmentMapper.selectAllEnrollmentDetails();
     }
     // 检查学生已选课程是否与新课程时间冲突
     private boolean hasTimeConflict(Long studentId, Course newCourse) {
