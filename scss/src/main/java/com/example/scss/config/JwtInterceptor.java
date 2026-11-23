@@ -6,14 +6,11 @@ import com.example.scss.utils.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
-import com.example.scss.service.UserService;
 import com.example.scss.entity.SysUser;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
-
 @Component
 public class JwtInterceptor implements HandlerInterceptor {
-    @Autowired
     private final UserService userService ;
     private final JwtUtil jwtUtil;
     public JwtInterceptor(JwtUtil jwtUtil,UserService userService) {
@@ -28,7 +25,6 @@ public class JwtInterceptor implements HandlerInterceptor {
         response.getWriter().write(//前端返回信息
                 "{\"code\":401,\"message\":\"未登录或登录已过期\",\"data\":null}"
         );
-
         return false;
     }
     //spring MVC

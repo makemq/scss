@@ -32,15 +32,12 @@ public class UserServiceImpl implements UserService {
         if (username == null || username.isBlank()) {
             throw new IllegalArgumentException("用户名不能为空");
         }
-
         if (username.length() > 50) {
             throw new IllegalArgumentException("用户名不能超过50个字符");
         }
-
         if (rawPassword == null || rawPassword.length() < 8) {
             throw new IllegalArgumentException("密码至少需要8个字符");
         }
-
         if (rawPassword.length() > 72) {
             throw new IllegalArgumentException("密码不能超过72个字符");
         }
@@ -53,7 +50,6 @@ public class UserServiceImpl implements UserService {
         user.setRole("STUDENT");
         userMapper.insert(user);
         return user;
-
     }
     @Override
     public boolean verifyPassword(

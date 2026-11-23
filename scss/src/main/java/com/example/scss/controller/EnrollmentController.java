@@ -1,5 +1,4 @@
 package com.example.scss.controller;
-
 import com.example.scss.annotation.RequireRole;
 import com.example.scss.config.Result;
 import com.example.scss.dto.AdminEnrollmentResponse;
@@ -9,7 +8,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
 @RestController
 @RequestMapping("/enrollment")
 public class EnrollmentController {

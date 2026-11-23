@@ -8,7 +8,7 @@ import com.example.scss.service.StudentService;
 import org.springframework.web.bind.annotation.*;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import java.util.List;
-
+import com.example.scss.annotation.RequireRole;
 @RestController
 @RequestMapping("/student")
 public class StudentController {
@@ -16,12 +16,15 @@ public class StudentController {
 
     public StudentController(StudentService studentService) {
         this.studentService = studentService;
-    }//查詢全部學生
+    }
+    //查詢全部學生
+    @RequireRole("ADMIN")
     @GetMapping("/list")
     public Result<List<Student>>listStudents(){
         List<Student> students = studentService.listStudents();
         return Result.success(students);
     }//根据id查找學生
+    @RequireRole("ADMIN")
     @GetMapping("/{id}")
     public Result<Student>getStudentById(@PathVariable Long id){
         Student student = studentService.getStudentById(id);
@@ -30,6 +33,7 @@ public class StudentController {
         }
         return Result.success(student);
     }//新增學生
+    @RequireRole("ADMIN")
     @PostMapping("/add")
     public Result<String> addStudent(@RequestBody StudentAddRequest request){
     if(request.getName()==null||request.getName().trim().isEmpty()){
@@ -47,6 +51,7 @@ public class StudentController {
     }
     return Result.success("学生新增成功");
     }//修改学生信息
+    @RequireRole("ADMIN")
     @PutMapping("/update")
     public Result<String> updateStudent(@RequestBody StudentUpdateRequest request){
     if(request.getId()==null){
@@ -68,6 +73,7 @@ public class StudentController {
         }
         return Result.success("学生修改成功");
     }//删除学生
+    @RequireRole("ADMIN")
     @DeleteMapping("/{id}")
     public Result<String> deleteStudent(@PathVariable Long id){
         boolean success = studentService.deleteStudent(id);
@@ -76,6 +82,7 @@ public class StudentController {
         }
         return Result.success("学生删除成功");
     }//分页查询与模糊搜索
+    @RequireRole("ADMIN")
     @GetMapping("/page")
     public Result<IPage<Student>> pageStudents(@RequestParam(required = false ) String keyword,
                                                @RequestParam(defaultValue = "1") Long pageNum,

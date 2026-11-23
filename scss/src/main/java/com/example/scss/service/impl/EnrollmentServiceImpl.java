@@ -1,4 +1,3 @@
-
 package com.example.scss.service.impl;
 import com.example.scss.dto.AdminEnrollmentResponse;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -9,17 +8,19 @@ import com.example.scss.mapper.EnrollmentMapper;
 import com.example.scss.service.EnrollmentService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.example.scss.entity.Student;
+import com.example.scss.mapper.StudentMapper;
 import java.time.LocalDateTime;
 import java.util.List;
-
 @Service
 public class EnrollmentServiceImpl implements EnrollmentService {
     private final EnrollmentMapper enrollmentMapper;
     private final CourseMapper courseMapper;
-    public EnrollmentServiceImpl(EnrollmentMapper enrollmentMapper, CourseMapper courseMapper) {
+    private final StudentMapper studentMapper;
+    public EnrollmentServiceImpl(EnrollmentMapper enrollmentMapper, CourseMapper courseMapper, StudentMapper studentMapper) {
         this.enrollmentMapper = enrollmentMapper;
         this.courseMapper = courseMapper;
+        this.studentMapper = studentMapper;
     }
     @Override
     @Transactional
@@ -65,7 +66,6 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         courseMapper.updateById(course);
         return true;
     }
-
     @Override
     @Transactional
     public boolean dropCourse(Long studentId, Long courseId) {
@@ -95,12 +95,33 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Override
     public List<Enrollment> listByStudentId(Long studentId) {
-        return List.of();
+        LambdaQueryWrapper<Enrollment> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Enrollment::getStudentId, studentId).eq(Enrollment::getStatus, 1).orderByDesc(Enrollment::getEnrollTime);
+        return enrollmentMapper.selectList(wrapper);
     }
-
     @Override
     public List<AdminEnrollmentResponse> listAllEnrollments() {
-        return List.of();
+        //查询选课记录
+        List<Enrollment> enrollments = enrollmentMapper.selectList(new LambdaQueryWrapper<Enrollment>().orderByDesc(Enrollment::getEnrollTime));
+        //返回结果集合
+        List<AdminEnrollmentResponse> result = new java.util.ArrayList<>();
+        for(Enrollment enrollment : enrollments){
+            Student student = studentMapper.selectById(enrollment.getStudentId());
+            Course course = courseMapper.selectById(enrollment.getCourseId());
+            //创建DTO组建数据
+            AdminEnrollmentResponse response = new AdminEnrollmentResponse();
+            response.setId(enrollment.getId());
+            response.setStudentId(enrollment.getStudentId());
+            response.setCourseId(enrollment.getCourseId());
+            response.setEnrollTime(enrollment.getEnrollTime());
+            response.setStatus(enrollment.getStatus());
+            if(course != null){
+                response.setCourseName(course.getCourseName());
+                response.setTeacher(course.getTeacher());
+            }
+            result.add(response);//加入集合
+        }
+        return result;//返回结果
     }
     // 检查学生已选课程是否与新课程时间冲突
     private boolean hasTimeConflict(Long studentId, Course newCourse) {
