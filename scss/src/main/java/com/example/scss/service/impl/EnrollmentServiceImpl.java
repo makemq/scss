@@ -11,19 +11,36 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.scss.mapper.StudentMapper;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.math.BigDecimal;
+import com.example.scss.entity.SelectionConfig;
+import com.example.scss.service.SelectionConfigService;
 @Service
 public class EnrollmentServiceImpl implements EnrollmentService {
     private final EnrollmentMapper enrollmentMapper;
     private final CourseMapper courseMapper;
     private final StudentMapper studentMapper;
-    public EnrollmentServiceImpl(EnrollmentMapper enrollmentMapper, CourseMapper courseMapper, StudentMapper studentMapper) {
+    private final SelectionConfigService selectionConfigService;
+    public EnrollmentServiceImpl(EnrollmentMapper enrollmentMapper, CourseMapper courseMapper, StudentMapper studentMapper, SelectionConfigService selectionConfigService) {
         this.enrollmentMapper = enrollmentMapper;
         this.courseMapper = courseMapper;
         this.studentMapper = studentMapper;
+        this.selectionConfigService = selectionConfigService;
     }
+
     @Override
     @Transactional
     public boolean selectCourse(Long studentId, Long courseId) {
+        //检查是否处于选课范围
+        SelectionConfig config = selectionConfigService.getActiveConfig();
+        if (config == null) {
+            return false;
+        }
+        //获取时间
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isBefore(config.getStartTime())
+                || now.isAfter(config.getEndTime())) {
+            return false;
+        }
         //锁定课程，避免并发选课超出容量
         Course course = courseMapper.selectByIdForUpdate(courseId);
         //检查课程是否存在、是否正常开放
@@ -91,9 +108,34 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         courseMapper.updateById(course);
         return true;
     }
-
+    //更新课程成绩
+    @Override
+    public boolean updateScore(Long enrollmentId, BigDecimal score) {
+        //检查成绩范围
+        if (score == null
+                || score.compareTo(BigDecimal.ZERO) < 0//比较
+                || score.compareTo(new BigDecimal("100")) > 0) {
+            return false;
+        }
+        //查询选课记录
+        Enrollment enrollment = enrollmentMapper.selectById(enrollmentId);
+        //检查记录是否存在，或有效
+        if (enrollment == null || enrollment.getStatus() == null
+                || enrollment.getStatus() != 1) {
+            return false;
+        }
+        enrollment.setScore(score);
+        return enrollmentMapper.updateById(enrollment) > 0;
+    }
     @Override
     public List<Enrollment> listByStudentId(Long studentId) {
+        LambdaQueryWrapper<Enrollment> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Enrollment::getStudentId, studentId).eq(Enrollment::getStatus, 1).orderByDesc(Enrollment::getEnrollTime);
+        return enrollmentMapper.selectList(wrapper);
+    }
+    //查询个人成绩完成
+    @Override
+    public List<Enrollment> listStudentGrade(Long studentId){
         LambdaQueryWrapper<Enrollment> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Enrollment::getStudentId, studentId).eq(Enrollment::getStatus, 1).orderByDesc(Enrollment::getEnrollTime);
         return enrollmentMapper.selectList(wrapper);

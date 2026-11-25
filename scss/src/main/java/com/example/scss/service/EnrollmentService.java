@@ -3,6 +3,8 @@ package com.example.scss.service;
 import com.example.scss.entity.Course;
 import com.example.scss.entity.Enrollment;
 import com.example.scss.dto.AdminEnrollmentResponse;
+
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface EnrollmentService {
@@ -17,4 +19,8 @@ public interface EnrollmentService {
     List<AdminEnrollmentResponse> listAllEnrollments();
     //查询学生个人课表
     List<Course> getStudentSchedule(Long studentId);
+    //管理员录入或修改学生成绩
+    boolean updateScore(Long enrollmentId, BigDecimal score);
+    //学生查询选课成绩
+    List<Enrollment> listStudentGrade(Long studentId);
 }

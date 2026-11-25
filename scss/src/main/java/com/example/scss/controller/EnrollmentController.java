@@ -7,7 +7,7 @@ import com.example.scss.entity.Enrollment;
 import com.example.scss.service.EnrollmentService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
-
+import java.math.BigDecimal;
 import java.util.List;
 @RestController
 @RequestMapping("/enrollment")
@@ -78,5 +78,20 @@ public Result<List<Course>> getMySchedule(HttpServletRequest request){
 public Result<List<AdminEnrollmentResponse>> listAllEnrollments(){
         return Result.success(enrollmentService.listAllEnrollments());
 }
+//录入成绩
+@PutMapping("/admin/score/{enrollmentId}")
+@RequireRole("ADMIN")
+public Result<String> updateScore(@PathVariable Long enrollmentId, BigDecimal score){
+        if(enrollmentId == null || enrollmentId <= 0){
+            return Result.error(400,"你的选课记录ID不合法！");
+        }
+        boolean success = enrollmentService.updateScore(enrollmentId,score);
+        if(!success){
+            return Result.error(400,"成绩修改失败，请检查选课记录或成绩范围");
+        }
+        return Result.success("success");
+}
+//学生查看自己成绩
+
 }
 
