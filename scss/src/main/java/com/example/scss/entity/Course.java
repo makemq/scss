@@ -14,22 +14,13 @@ public class Course {
 
     @TableId(type = IdType.AUTO)
     private Long id;
-
     private String courseName;
-
     private String teacher;
-
     private BigDecimal credit;
-
     private Integer capacity;
-
     private Integer selectedCount;
-
     private Integer classDay;
-
     private Integer startSection;
-
     private Integer endSection;
-
     private Integer status;
 }

@@ -1,6 +1,7 @@
 package com.example.scss.service.impl;
 import com.example.scss.dto.AdminEnrollmentResponse;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.example.scss.dto.AdminStatisticsResponse;
 import com.example.scss.entity.Course;
 import com.example.scss.entity.Enrollment;
 import com.example.scss.mapper.CourseMapper;
@@ -10,10 +11,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.scss.mapper.StudentMapper;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.math.BigDecimal;
 import com.example.scss.entity.SelectionConfig;
 import com.example.scss.service.SelectionConfigService;
+import com.example.scss.dto.StudentCreditStatistics;
+import com.example.scss.dto.CourseEnrollmentStatistics;
 @Service
 public class EnrollmentServiceImpl implements EnrollmentService {
     private final EnrollmentMapper enrollmentMapper;
@@ -141,6 +145,46 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         return enrollmentMapper.selectList(wrapper);
     }
     @Override
+    public StudentCreditStatistics getStudentCreditStatistics(Long studentId) {
+        StudentCreditStatistics statistics = new StudentCreditStatistics();
+        //查询学生有效选课记录
+        LambdaQueryWrapper<Enrollment> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Enrollment::getStudentId, studentId).eq(Enrollment::getStatus, 1);
+        List<Enrollment> enrollments = enrollmentMapper.selectList(wrapper);
+        int selectedCount = 0;
+        int completedCount = 0;
+        int failedCount = 0;
+        int pendingCount = 0;
+        BigDecimal earnedCredits = BigDecimal.ZERO;
+        for (Enrollment enrollment : enrollments) {
+            selectedCount++;
+            //未录入成绩
+            if (enrollment.getScore() == null) {
+                pendingCount++;
+                continue;
+            }
+            //查询课程信息
+            Course course = courseMapper.selectById(enrollment.getCourseId());
+            if (course == null) {
+                continue;
+            }
+            // 成绩达到60分，计入已修课程和已获得学分
+            if (enrollment.getScore().compareTo(new BigDecimal("60")) >= 0) {
+                completedCount++;
+                earnedCredits = earnedCredits.add(course.getCredit());
+            } else {
+                failedCount++;
+            }
+            statistics.setSelectedCourseCount(selectedCount);//统计有效选课记录
+            statistics.setCompletedCourseCount(completedCount);//有效成绩
+            statistics.setEarnedCredits(earnedCredits);//获得
+            statistics.setFailedCourseCount(failedCount);//无效
+            statistics.setPendingCourseCount(pendingCount);//未录入
+        }
+        return statistics;
+    }
+
+    @Override
     public List<AdminEnrollmentResponse> listAllEnrollments() {
         //联表查询
         return enrollmentMapper.selectAllEnrollmentDetails();
@@ -172,6 +216,43 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         // 所有课程检查完毕，没有冲突
         return false;
     }
+    @Override
+    //管理员统计数据
+    public AdminStatisticsResponse getAdminStatistics() {
+        AdminStatisticsResponse response = new AdminStatisticsResponse();
+        //统计学生人数
+        Long studentCount = studentMapper.selectCount(null);
+        //统计课程总数
+        Long courseCount = courseMapper.selectCount(null);
+        //统计有效课程
+        LambdaQueryWrapper<Enrollment> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Enrollment::getStatus, 1);
+        Long enrollmentCount = enrollmentMapper.selectCount(wrapper);
 
+        response.setStudentCount(studentCount);
+        response.setCourseCount(courseCount);
+        response.setEnrollmentCount(enrollmentCount);
+        return response;
+    }
+    public List<CourseEnrollmentStatistics> getCourseEnrollmentStatistics() {
+        //查询所有课程
+        List<Course> courses = courseMapper.selectList(null);
+        List<CourseEnrollmentStatistics> result = new ArrayList<>();
+        for (Course course : courses) {
+            //统计课程有效选课人数
+            LambdaQueryWrapper<Enrollment> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(Enrollment::getCourseId, course.getId());
+            wrapper.eq(Enrollment::getStatus, 1);
+            Long count = enrollmentMapper.selectCount(wrapper);
+            //封装统计数据
+            CourseEnrollmentStatistics statistics = new CourseEnrollmentStatistics();
+            statistics.setCourseId(course.getId());
+            statistics.setCourseName(course.getCourseName());
+            statistics.setCapacity(course.getCapacity());
+            statistics.setEnrollmentCount(count);
+            result.add(statistics);
+        }
+        return result;
+    }
 
 }

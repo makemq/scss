@@ -9,6 +9,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
+import com.example.scss.dto.StudentCreditStatistics;
+import com.example.scss.dto.AdminStatisticsResponse;
+import com.example.scss.dto.CourseEnrollmentStatistics;
 @RestController
 @RequestMapping("/enrollment")
 public class EnrollmentController {
@@ -92,6 +95,33 @@ public Result<String> updateScore(@PathVariable Long enrollmentId, BigDecimal sc
         return Result.success("success");
 }
 //学生查看自己成绩
-
+@GetMapping("/my/grade")
+@RequireRole("STUDENT")
+public Result<List<Enrollment>> myGrades(HttpServletRequest request){
+       Long studentId = (Long) request.getAttribute("studentId");
+       if(studentId == null){
+           return Result.error(400,"当前账号尚未绑定学生档案");
+       }
+       return Result.success(enrollmentService.listStudentGrade(studentId));
+    }
+@GetMapping("/my/credits")
+@RequireRole("STUDENT")
+public Result<StudentCreditStatistics> myCredits(HttpServletRequest request){
+        Long studentId = (Long) request.getAttribute("studentId");
+        if(studentId == null){
+            return  Result.error(400,"当前账号尚未绑定学生档案");
+        }
+        return Result.success(enrollmentService.getStudentCreditStatistics(studentId));
+}
+//管理员统计数据
+@GetMapping("/admin/statistics")
+@RequireRole("ADMIN")
+public Result<AdminStatisticsResponse> getAdminStatistics(){
+        return Result.success(enrollmentService.getAdminStatistics());
+}
+//管理员查询各课程选课人数统计
+public Result<List<CourseEnrollmentStatistics>> getCourseEnrollmentStatistics(){
+        return Result.success(enrollmentService.getCourseEnrollmentStatistics());
+}
 }
 
