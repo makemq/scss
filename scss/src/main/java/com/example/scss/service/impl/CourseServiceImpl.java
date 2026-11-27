@@ -1,16 +1,16 @@
 
 package com.example.scss.service.impl;
-
+import org.springframework.cache.annotation.CacheEvict;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.scss.entity.Course;
 import com.example.scss.mapper.CourseMapper;
 import com.example.scss.service.CourseService;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import com.example.scss.mapper.EnrollmentMapper;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 
 @Service
@@ -22,14 +22,17 @@ public class CourseServiceImpl implements CourseService {
         this.enrollmentMapper = enrollmentMapper;
     }
     @Override
+    @Cacheable(value = "courses",key = "'list'")
     public List<Course> listCourses() {
         return courseMapper.selectList(null);
     }
     @Override
+    @Cacheable(value = "courses", key = "'detail:' + #id")
     public Course getCourseById(Long id) {
         return courseMapper.selectById(id);
     }
     @Override
+    @CacheEvict(value = "courses", allEntries = true)
     public boolean addCourse(Course course) {
         //初始化
         if(course.getSelectedCount()==null){
@@ -42,6 +45,7 @@ public class CourseServiceImpl implements CourseService {
         return courseMapper.insert(course) > 0;
     }
     @Override
+    @CacheEvict(value = "courses", allEntries = true)
     public boolean updateCourse(Course course) {
         //检查课程是否存在
         Course oldCourse = courseMapper.selectById(course.getId());
@@ -52,6 +56,7 @@ public class CourseServiceImpl implements CourseService {
     }
     @Override
     @Transactional//将删除操作添加到事务中
+    @CacheEvict(value = "courses", allEntries = true)
     public boolean deleteCourse(Long id) {
         //查询课程时加数据库行锁，避免并发操作造成数据问题
         Course course = courseMapper.selectByIdForUpdate(id);
