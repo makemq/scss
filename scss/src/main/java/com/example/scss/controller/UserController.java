@@ -56,11 +56,7 @@ public class UserController {
     @PostMapping("/login")
     public Result login(@RequestBody LoginRequest request) {
         //检查登录
-        if (request == null
-                || request.getUsername() == null
-                || request.getUsername().isBlank()
-                || request.getPassword() == null
-                || request.getPassword().isBlank()) {
+        if (request == null || request.getUsername() == null || request.getUsername().isBlank() || request.getPassword() == null || request.getPassword().isBlank()) {
             return Result.error(400, "用户名和密码不能为空");
         }
         // 验证用户名和密码
@@ -71,11 +67,11 @@ public class UserController {
         if (!valid) {
             return Result.error(401, "用户名或密码错误");
         }
-        // 生成 JWT Token
         //生成access token
         String accessToken = jwtUtil.generateAccessToken(
                 request.getUsername()
         );
+        //生成refresh Token
         String refreshToken = jwtUtil.generateRefreshToken(
                 request.getUsername()
         );
@@ -86,9 +82,7 @@ public class UserController {
     }
     @PostMapping("/refresh")
     public Result refresh(@RequestBody RefreshRequest request) {
-        if (request == null
-                || request.getRefreshToken() == null
-                || request.getRefreshToken().isBlank()) {
+        if (request == null || request.getRefreshToken() == null || request.getRefreshToken().isBlank()) {
             return Result.error(400, "Refresh Token 不能为空");
         }
         //获取token

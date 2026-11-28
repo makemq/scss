@@ -50,8 +50,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         }
         //获取时间
         LocalDateTime now = LocalDateTime.now();
-        if (now.isBefore(config.getStartTime())
-                || now.isAfter(config.getEndTime())) {
+        if (now.isBefore(config.getStartTime()) || now.isAfter(config.getEndTime())) {
             return false;
         }
         //锁定课程，避免并发选课超出容量
@@ -76,7 +75,6 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         if (course.getSelectedCount() >= course.getCapacity()) {
             return false;
         }
-
         //如果之前退过这门课，恢复原来的选课记录
         if (enrollment != null) {
             enrollment.setStatus(1);

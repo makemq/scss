@@ -5,7 +5,7 @@ import com.example.scss.entity.Student;
 import java.util.List;
 
 public interface StudentService {
-    // 查询所有学生mvn clean compile
+    // 查询所有学生
     List<Student> listStudents();
     // 根据 ID 查询学生
     Student getStudentById(Long id);

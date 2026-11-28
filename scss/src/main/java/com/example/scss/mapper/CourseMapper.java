@@ -26,8 +26,8 @@ public interface CourseMapper extends BaseMapper<Course> {
     WHERE course_category = 'ELECTIVE'
       AND status = 1
       AND selected_count < capacity
-      AND (#{courseType} IS NULL OR course_type = #{courseType})
-      AND (#{teachingMode} IS NULL OR teaching_mode = #{teachingMode})
+      AND (#{courseType} IS NULL OR #{courseType} = '' OR course_type = #{courseType})
+      AND (#{teachingMode} IS NULL OR #{teachingMode} = '' OR teaching_mode = #{teachingMode})
       AND (#{teacher} IS NULL OR #{teacher} = ''
            OR teacher LIKE CONCAT('%', #{teacher}, '%'))
     """)

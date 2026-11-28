@@ -14,10 +14,9 @@ public class StudentServiceImpl implements StudentService {
     public StudentServiceImpl(StudentMapper studentMapper) {
         this.studentMapper = studentMapper;
     }
-
     private final StudentMapper studentMapper;
 
-//查询
+    //查询
     @Override
     public List<Student> listStudents() {
         return studentMapper.selectList(null);

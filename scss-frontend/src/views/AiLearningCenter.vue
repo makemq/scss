@@ -1,4 +1,3 @@
-
 <script setup>
 import { ref } from 'vue'
 import axios from 'axios'
@@ -8,6 +7,14 @@ const switchFeature = (key) => {
   activeFeature.value = key
   errorMessage.value = ''
   chatError.value = ''
+
+  if (key === 'progress') {
+    fetchStudyProgress()
+  }
+
+  if (key === 'requirements') {
+    fetchStudyRequirements()
+  }
 }
 const features = [
   {
@@ -104,30 +111,83 @@ const chatInput = ref('')
 const chatMessages = ref([])
 const chatLoading = ref(false)
 const chatError = ref('')
+// 修读进度状态
+const progressData = ref(null)
+const progressLoading = ref(false)
+const progressError = ref('')
 
+// 修读要求状态
+const requirementData = ref(null)
+const requirementLoading = ref(false)
+const requirementError = ref('')
+
+// 获取学生修读进度
+const fetchStudyProgress = async () => {
+  if (progressLoading.value) return
+
+  progressLoading.value = true
+  progressError.value = ''
+
+  try {
+    const response = await axios.get(
+        'http://localhost:8080/student/progress'
+    )
+
+    if (response.data.code === 200) {
+      progressData.value = response.data.data
+    } else {
+      progressError.value = response.data.message || '获取修读进度失败'
+    }
+  } catch (error) {
+    progressError.value =
+        error.response?.data?.message || '获取修读进度失败，请稍后重试'
+  } finally {
+    progressLoading.value = false
+  }
+}
+
+// 获取学生修读要求
+const fetchStudyRequirements = async () => {
+  if (requirementLoading.value) return
+
+  requirementLoading.value = true
+  requirementError.value = ''
+
+  try {
+    const response = await axios.get(
+        'http://localhost:8080/student/requirements'
+    )
+
+    if (response.data.code === 200) {
+      requirementData.value = response.data.data
+    } else {
+      requirementError.value = response.data.message || '获取修读要求失败'
+    }
+  } catch (error) {
+    requirementError.value =
+        error.response?.data?.message || '获取修读要求失败，请稍后重试'
+  } finally {
+    requirementLoading.value = false
+  }
+}
 // 发送 AI 消息
 const sendChatMessage = async () => {
   const message = chatInput.value.trim()
-
   if (!message) {
     chatError.value = '请输入你想咨询的问题'
     return
   }
-
   if (message.length > 1000) {
     chatError.value = '问题不能超过1000个字符'
     return
   }
-
   chatError.value = ''
   chatLoading.value = true
-
   // 添加学生消息
   chatMessages.value.push({
     role: 'user',
     content: message
   })
-
   chatInput.value = ''
 
   try {
@@ -241,8 +301,8 @@ const sendChatMessage = async () => {
           <label>授课方式</label>
           <select v-model="form.teachingMode">
             <option value="">不限</option>
-            <option value="OFFLINE">线下</option>
-            <option value="ONLINE">线上</option>
+            <option value="线下">线下</option>
+            <option value="线上">线上</option>
           </select>
         </div>
       </div>
@@ -439,12 +499,133 @@ const sendChatMessage = async () => {
       </div>
     </section>
 
-    <!-- 其他功能暂时保留入口 -->
+    <!-- 修读进度 -->
+    <section v-else-if="activeFeature === 'progress'" class="study-card">
+      <div class="study-header">
+        <div>
+          <h2>我的修读进度</h2>
+          <p>实时查看各类课程学分与课程完成情况</p>
+        </div>
+        <button class="refresh-btn" @click="fetchStudyProgress">
+          刷新数据
+        </button>
+      </div>
+
+      <div v-if="progressLoading" class="study-message">
+        正在加载修读进度...
+      </div>
+
+      <div v-else-if="progressError" class="study-message error">
+        {{ progressError }}
+      </div>
+
+      <div v-else-if="progressData" class="study-content">
+        <div class="credit-grid">
+          <div class="credit-item">
+            <span>社会科学</span>
+            <strong>{{ progressData.socialCredits ?? 0 }}</strong>
+            <small>学分</small>
+          </div>
+          <div class="credit-item">
+            <span>自然科学</span>
+            <strong>{{ progressData.naturalCredits ?? 0 }}</strong>
+            <small>学分</small>
+          </div>
+          <div class="credit-item">
+            <span>艺术体育</span>
+            <strong>{{ progressData.artCredits ?? 0 }}</strong>
+            <small>学分</small>
+          </div>
+          <div class="credit-item">
+            <span>民族课程</span>
+            <strong>{{ progressData.ethnicCredits ?? 0 }}</strong>
+            <small>学分</small>
+          </div>
+        </div>
+
+        <div class="course-stat-grid">
+          <div class="course-stat">
+            <span>已完成线下课程</span>
+            <strong>{{ progressData.completedOfflineCourses ?? 0 }}</strong>
+          </div>
+          <div class="course-stat">
+            <span>待出成绩课程</span>
+            <strong>{{ progressData.pendingCourses ?? 0 }}</strong>
+          </div>
+          <div class="course-stat">
+            <span>未通过课程</span>
+            <strong>{{ progressData.failedCourses ?? 0 }}</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 修读要求 -->
+    <section v-else-if="activeFeature === 'requirements'" class="study-card">
+      <div class="study-header">
+        <div>
+          <h2>修读要求检查</h2>
+          <p>查看各项毕业修读要求的完成情况</p>
+        </div>
+        <button class="refresh-btn" @click="fetchStudyRequirements">
+          刷新数据
+        </button>
+      </div>
+
+      <div v-if="requirementLoading" class="study-message">
+        正在检查修读要求...
+      </div>
+
+      <div v-else-if="requirementError" class="study-message error">
+        {{ requirementError }}
+      </div>
+
+      <div v-else-if="requirementData" class="requirement-list">
+        <div class="requirement-item">
+          <span>社会科学学分</span>
+          <strong :class="requirementData.socialSatisfied ? 'satisfied' : 'unsatisfied'">
+            {{ requirementData.socialSatisfied ? '已满足' : '未满足' }}
+          </strong>
+        </div>
+
+        <div class="requirement-item">
+          <span>自然科学学分</span>
+          <strong :class="requirementData.naturalSatisfied ? 'satisfied' : 'unsatisfied'">
+            {{ requirementData.naturalSatisfied ? '已满足' : '未满足' }}
+          </strong>
+        </div>
+
+        <div class="requirement-item">
+          <span>艺术体育学分</span>
+          <strong :class="requirementData.artSatisfied ? 'satisfied' : 'unsatisfied'">
+            {{ requirementData.artSatisfied ? '已满足' : '未满足' }}
+          </strong>
+        </div>
+
+        <div class="requirement-item">
+          <span>民族课程学分</span>
+          <strong :class="requirementData.ethnicSatisfied ? 'satisfied' : 'unsatisfied'">
+            {{ requirementData.ethnicSatisfied ? '已满足' : '未满足' }}
+          </strong>
+        </div>
+
+        <div class="requirement-item">
+          <span>线下课程要求</span>
+          <strong :class="requirementData.offlineSatisfied ? 'satisfied' : 'unsatisfied'">
+            {{ requirementData.offlineSatisfied ? '已满足' : '未满足' }}
+          </strong>
+        </div>
+
+        <div class="unmet-summary">
+          尚未满足的学分类别：{{ requirementData.unmetCategoryCount ?? 0 }} 项
+        </div>
+      </div>
+    </section>
+
     <section v-else class="intro-card">
       <div>
         <h2>{{ features.find(item => item.key === activeFeature)?.title }}</h2>
         <p>{{ features.find(item => item.key === activeFeature)?.description }}</p>
-        <div class="coming-soon">该功能即将接入</div>
       </div>
       <div class="intro-decoration">AI</div>
     </section>
@@ -1195,6 +1376,175 @@ const sendChatMessage = async () => {
 
   .quick-questions button {
     width: 100%;
+  }
+}
+/* 修读进度与修读要求 */
+.study-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 28px;
+  box-shadow: 0 8px 30px rgba(30, 64, 175, 0.06);
+  min-height: 400px;
+}
+
+.study-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.study-header h2 {
+  margin: 0 0 8px;
+  color: #1e293b;
+  font-size: 22px;
+}
+
+.study-header p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.refresh-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  background: #2563eb;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.refresh-btn:hover {
+  background: #1d4ed8;
+}
+
+.credit-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.credit-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 12px;
+  border-radius: 14px;
+  background: #eff6ff;
+}
+
+.credit-item span {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.credit-item strong {
+  color: #2563eb;
+  font-size: 30px;
+}
+
+.credit-item small {
+  color: #94a3b8;
+}
+
+.course-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.course-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 22px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+}
+
+.course-stat span {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.course-stat strong {
+  color: #1e293b;
+  font-size: 28px;
+}
+
+.study-message {
+  padding: 40px 16px;
+  text-align: center;
+  color: #64748b;
+}
+
+.study-message.error {
+  color: #dc2626;
+}
+
+.requirement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.requirement-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  color: #475569;
+}
+
+.requirement-item strong {
+  font-size: 14px;
+}
+
+.satisfied {
+  color: #16a34a;
+}
+
+.unsatisfied {
+  color: #dc2626;
+}
+
+.unmet-summary {
+  margin-top: 10px;
+  padding: 18px;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .study-card {
+    padding: 18px;
+  }
+
+  .credit-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .course-stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .study-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .requirement-item {
+    padding: 15px;
   }
 }
 </style>

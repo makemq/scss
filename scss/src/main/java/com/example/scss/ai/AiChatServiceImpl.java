@@ -31,9 +31,7 @@ public class AiChatServiceImpl implements AiChatService {
     @Override
     public AiChatResponse chat(Long studentId, String message) {
         StudyProgressResponse progress = studyProgressService.getStudyProgress(studentId);
-        List<Course> candidates = courseMapper.selectAvailableElectiveCourses(
-                        null, null, null
-                );
+        List<Course> candidates = courseMapper.selectAvailableElectiveCourses(null, null, null);
         Set<Long> enrolledIds = new HashSet<>(enrollmentMapper.selectStudentEnrolledCourseIds(studentId)
         );
         List<Course> schedule = enrollmentMapper.selectStudentSchedule(studentId);
@@ -51,9 +49,7 @@ public class AiChatServiceImpl implements AiChatService {
                                 && candidate.getEndSection() >= selected.getStartSection()
                 )
         );
-
         try {
-
             String progressJson = objectMapper.writeValueAsString(progress);
             String courseJson = objectMapper.writeValueAsString(candidates);
             String prompt = """
@@ -90,7 +86,6 @@ public class AiChatServiceImpl implements AiChatService {
                     回答应清晰、具体，并优先结合学生的实际数据。
                     """.formatted(progressJson, courseJson, message
             );
-
             String answer = chatClient.prompt()
                     .user(prompt)
                     .call()
