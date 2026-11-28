@@ -113,6 +113,8 @@ public class AiCourseServiceImpl implements AiCourseService {
             民族是否满足：%s
             线下课程数量是否满足：%s       
             推荐时必须遵守：
+            当前真实可选课程列表：
+            %s
             1. 优先推荐尚未满足学分要求的课程类别。
             2. 如果线下课程数量不足2门，优先考虑线下课程。
             3. 已经满足要求的类别不需要重复优先推荐。
