@@ -4,7 +4,11 @@ import { ref } from 'vue'
 import axios from 'axios'
 
 const activeFeature = ref('recommend')
-
+const switchFeature = (key) => {
+  activeFeature.value = key
+  errorMessage.value = ''
+  chatError.value = ''
+}
 const features = [
   {
     key: 'recommend',
@@ -95,6 +99,60 @@ const formatDay = (day) => {
   if (!day) return '暂未安排'
   return `星期${['一', '二', '三', '四', '五', '六', '日'][day - 1] || day}`
 }
+// AI 对话状态
+const chatInput = ref('')
+const chatMessages = ref([])
+const chatLoading = ref(false)
+const chatError = ref('')
+
+// 发送 AI 消息
+const sendChatMessage = async () => {
+  const message = chatInput.value.trim()
+
+  if (!message) {
+    chatError.value = '请输入你想咨询的问题'
+    return
+  }
+
+  if (message.length > 1000) {
+    chatError.value = '问题不能超过1000个字符'
+    return
+  }
+
+  chatError.value = ''
+  chatLoading.value = true
+
+  // 添加学生消息
+  chatMessages.value.push({
+    role: 'user',
+    content: message
+  })
+
+  chatInput.value = ''
+
+  try {
+    const response = await axios.post(
+        'http://localhost:8080/ai/chat',
+        {
+          message: message
+        }
+    )
+
+    if (response.data.code === 200) {
+      chatMessages.value.push({
+        role: 'assistant',
+        content: response.data.data.answer
+      })
+    } else {
+      chatError.value = response.data.message || 'AI 回复失败'
+    }
+  } catch (error) {
+    chatError.value =
+        error.response?.data?.message || 'AI 服务暂时不可用，请稍后重试'
+  } finally {
+    chatLoading.value = false
+  }
+}
 </script>
 
 <template>
@@ -116,11 +174,12 @@ const formatDay = (day) => {
 
       <div class="feature-grid">
         <button
+            type="button"
             v-for="feature in features"
             :key="feature.key"
             class="feature-card"
             :class="{ active: activeFeature === feature.key }"
-            @click="activeFeature = feature.key"
+            @click.stop.prevent="switchFeature(feature.key)"
         >
           <div class="feature-icon">{{ feature.icon }}</div>
           <h3>{{ feature.title }}</h3>
@@ -279,6 +338,103 @@ const formatDay = (day) => {
               </div>
             </div>
           </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- AI 智能对话 -->
+    <section v-else-if="activeFeature === 'chat'" class="chat-card">
+      <div class="chat-header">
+        <div>
+          <h2>💬 雪峰 AI 对话助手</h2>
+          <p>你可以向我咨询课程、学分、选课规则和学习规划</p>
+        </div>
+        <span class="ai-status">
+      <span class="status-dot"></span>
+      AI 在线
+    </span>
+      </div>
+
+      <div class="chat-messages">
+        <div v-if="chatMessages.length === 0" class="chat-welcome">
+          <div class="welcome-icon">✦</div>
+          <h3>你好，我是雪峰 AI！</h3>
+          <p>有什么学习或选课问题，都可以问我。</p>
+
+          <div class="quick-questions">
+            <button
+                @click="chatInput = '请帮我分析当前的学习进度'"
+            >
+              📊 分析我的学习进度
+            </button>
+            <button
+                @click="chatInput = '请推荐适合我的课程'"
+            >
+              🎯 推荐适合我的课程
+            </button>
+            <button
+                @click="chatInput = '选课时有哪些注意事项？'"
+            >
+              📚 选课注意事项
+            </button>
+          </div>
+        </div>
+
+        <div
+            v-for="(message, index) in chatMessages"
+            :key="index"
+            class="chat-message"
+            :class="message.role"
+        >
+          <div class="message-avatar">
+            {{ message.role === 'user' ? '我' : '✦' }}
+          </div>
+
+          <div class="message-content">
+            <div class="message-name">
+              {{ message.role === 'user' ? '我' : '雪峰 AI' }}
+            </div>
+            <div class="message-bubble">
+              {{ message.content }}
+            </div>
+          </div>
+        </div>
+
+        <div v-if="chatLoading" class="chat-message assistant">
+          <div class="message-avatar">✦</div>
+          <div class="message-content">
+            <div class="message-name">雪峰 AI</div>
+            <div class="message-bubble typing">
+              正在思考，请稍候...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="chatError" class="chat-error">
+        {{ chatError }}
+      </div>
+
+      <div class="chat-input-area">
+    <textarea
+        v-model="chatInput"
+        placeholder="请输入你想咨询的问题..."
+        maxlength="1000"
+        rows="3"
+        :disabled="chatLoading"
+        @keydown.enter.exact.prevent="sendChatMessage"
+    ></textarea>
+
+        <div class="chat-input-bottom">
+          <span>{{ chatInput.length }} / 1000 · Enter 发送</span>
+
+          <button
+              class="chat-send-button"
+              @click="sendChatMessage"
+              :disabled="chatLoading || !chatInput.trim()"
+          >
+            {{ chatLoading ? '发送中...' : '发送 ↗' }}
+          </button>
         </div>
       </div>
     </section>
@@ -756,6 +912,289 @@ const formatDay = (day) => {
     align-items: flex-start;
     gap: 12px;
     flex-direction: column;
+  }
+}
+/* ==============================
+   AI 智能对话界面
+============================== */
+
+.chat-card {
+  padding: 26px 30px;
+  background: #ffffff;
+  border: 1px solid #e9edf3;
+  border-radius: 14px;
+  min-height: 560px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #edf0f5;
+}
+
+.chat-header h2 {
+  color: #30445f;
+  font-size: 20px;
+}
+
+.chat-header p {
+  margin-top: 8px;
+  color: #8993a3;
+  font-size: 13px;
+}
+
+.ai-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border-radius: 20px;
+  color: #26966c;
+  background: #eaf8f1;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #35b982;
+}
+
+.chat-messages {
+  flex: 1;
+  min-height: 320px;
+  max-height: 520px;
+  overflow-y: auto;
+  padding: 25px 5px;
+}
+
+.chat-welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 45px 15px 25px;
+  text-align: center;
+}
+
+.welcome-icon {
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 17px;
+  border-radius: 18px;
+  color: white;
+  background: linear-gradient(135deg, #438be2, #285ba5);
+  font-size: 30px;
+}
+
+.chat-welcome h3 {
+  color: #30445f;
+  font-size: 19px;
+}
+
+.chat-welcome p {
+  margin-top: 9px;
+  color: #8993a3;
+  font-size: 13px;
+}
+
+.quick-questions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 25px;
+}
+
+.quick-questions button {
+  padding: 10px 14px;
+  border: 1px solid #e1eaf5;
+  border-radius: 9px;
+  background: #f7faff;
+  color: #4b6d94;
+  font-size: 12px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.quick-questions button:hover {
+  border-color: #4385d0;
+  color: #3478bd;
+  background: #edf5ff;
+}
+
+.chat-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  margin-bottom: 23px;
+}
+
+.chat-message.user {
+  flex-direction: row-reverse;
+}
+
+.message-avatar {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 11px;
+  color: white;
+  background: linear-gradient(135deg, #438be2, #285ba5);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.chat-message.user .message-avatar {
+  background: #e9eff8;
+  color: #55769e;
+}
+
+.message-content {
+  max-width: 78%;
+}
+
+.chat-message.user .message-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.message-name {
+  margin-bottom: 7px;
+  color: #8993a3;
+  font-size: 11px;
+}
+
+.message-bubble {
+  padding: 12px 15px;
+  border-radius: 4px 12px 12px 12px;
+  background: #f2f6fc;
+  color: #42546c;
+  font-size: 13px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.chat-message.user .message-bubble {
+  border-radius: 12px 4px 12px 12px;
+  background: #eaf3ff;
+  color: #315f94;
+}
+
+.message-bubble.typing {
+  color: #8295ac;
+}
+
+.chat-error {
+  margin-bottom: 12px;
+  padding: 11px 14px;
+  border-radius: 8px;
+  color: #c14e4e;
+  background: #fff2f2;
+  font-size: 12px;
+}
+
+.chat-input-area {
+  padding: 15px;
+  border: 1px solid #dfe7f1;
+  border-radius: 12px;
+  background: #fafcff;
+}
+
+.chat-input-area textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 65px;
+  max-height: 150px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #34465e;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.chat-input-area textarea::placeholder {
+  color: #aab5c3;
+}
+
+.chat-input-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.chat-input-bottom span {
+  color: #a0aaba;
+  font-size: 11px;
+}
+
+.chat-send-button {
+  padding: 9px 20px;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  background: linear-gradient(110deg, #438be2, #3471c5);
+  font-size: 12px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.chat-send-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(54, 119, 201, 0.2);
+}
+
+.chat-send-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 手机端适配 */
+@media (max-width: 700px) {
+  .chat-card {
+    padding: 20px 15px;
+  }
+
+  .chat-header {
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .chat-header h2 {
+    font-size: 17px;
+  }
+
+  .chat-header p {
+    line-height: 1.6;
+  }
+
+  .message-content {
+    max-width: 85%;
+  }
+
+  .quick-questions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .quick-questions button {
+    width: 100%;
   }
 }
 </style>

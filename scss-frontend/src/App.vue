@@ -143,7 +143,7 @@ body {
 .main-content {
   flex: 1; /* 自动撑满剩余高度 */
   /* 重点：设置背景图 */
-  background-image: url('@/assets/bg.jpg'); /* 换成你的背景大图路径 */
+  background-image: linear-gradient(135deg, #eaf2fb, #dce9f8);
   background-size: cover; /* 图片铺满不拉伸 */
   background-position: center; /* 图片居中 */
   background-repeat: no-repeat;
