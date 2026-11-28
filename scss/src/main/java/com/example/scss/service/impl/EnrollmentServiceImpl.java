@@ -12,23 +12,32 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.scss.mapper.StudentMapper;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.math.BigDecimal;
+import java.util.Map;
+
 import com.example.scss.entity.SelectionConfig;
 import com.example.scss.service.SelectionConfigService;
 import com.example.scss.dto.StudentCreditStatistics;
 import com.example.scss.dto.CourseEnrollmentStatistics;
+import org.springframework.cache.CacheManager;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 @Service
 public class EnrollmentServiceImpl implements EnrollmentService {
     private final EnrollmentMapper enrollmentMapper;
     private final CourseMapper courseMapper;
     private final StudentMapper studentMapper;
     private final SelectionConfigService selectionConfigService;
-    public EnrollmentServiceImpl(EnrollmentMapper enrollmentMapper, CourseMapper courseMapper, StudentMapper studentMapper, SelectionConfigService selectionConfigService) {
+    private final CacheManager cacheManager;
+
+    public EnrollmentServiceImpl(EnrollmentMapper enrollmentMapper, CourseMapper courseMapper, StudentMapper studentMapper, SelectionConfigService selectionConfigService, CacheManager cacheManager) {
         this.enrollmentMapper = enrollmentMapper;
         this.courseMapper = courseMapper;
         this.studentMapper = studentMapper;
         this.selectionConfigService = selectionConfigService;
+        this.cacheManager = cacheManager;
     }
 
     @Override
@@ -82,8 +91,12 @@ public class EnrollmentServiceImpl implements EnrollmentService {
             enrollment.setStatus(1);
             enrollmentMapper.insert(enrollment);
         }//更新课程已选人数
-        course.setSelectedCount(course.getSelectedCount() +1);
-        courseMapper.updateById(course);
+        int updated = courseMapper.increaseSelectedCount(courseId);
+        if (updated != 1) {
+            throw new RuntimeException("课程选课人数更新失败");
+        }
+        //注册事务后提交
+        clearCacheAfterCommit();
         return true;
     }
     @Override
@@ -106,10 +119,12 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         enrollment.setStatus(0);
         enrollmentMapper.updateById(enrollment);
         //更新课程已选人数
-        course.setSelectedCount(
-                Math.max(0, course.getSelectedCount() - 1)
-        );
-        courseMapper.updateById(course);
+        int updated = courseMapper.decreaseSelectedCount(courseId);
+        if (updated != 1) {
+            throw new RuntimeException("课程选课人数更新失败");
+        }
+        //事务提交后清理
+        clearCacheAfterCommit();
         return true;
     }
     //更新课程成绩
@@ -228,7 +243,6 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         LambdaQueryWrapper<Enrollment> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Enrollment::getStatus, 1);
         Long enrollmentCount = enrollmentMapper.selectCount(wrapper);
-
         response.setStudentCount(studentCount);
         response.setCourseCount(courseCount);
         response.setEnrollmentCount(enrollmentCount);
@@ -237,22 +251,40 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     public List<CourseEnrollmentStatistics> getCourseEnrollmentStatistics() {
         //查询所有课程
         List<Course> courses = courseMapper.selectList(null);
+        //一次性统计所有课程有效人数
+        List<CourseEnrollmentStatistics> counts = enrollmentMapper.countAllCourseEnrollments();
+        //将统计结果转换成 Map
+        Map<Long, Long> countMap = new HashMap<>();
+        for (CourseEnrollmentStatistics item : counts) {
+            countMap.put(item.getCourseId(), item.getEnrollmentCount());
+        }
         List<CourseEnrollmentStatistics> result = new ArrayList<>();
         for (Course course : courses) {
-            //统计课程有效选课人数
-            LambdaQueryWrapper<Enrollment> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(Enrollment::getCourseId, course.getId());
-            wrapper.eq(Enrollment::getStatus, 1);
-            Long count = enrollmentMapper.selectCount(wrapper);
-            //封装统计数据
             CourseEnrollmentStatistics statistics = new CourseEnrollmentStatistics();
             statistics.setCourseId(course.getId());
             statistics.setCourseName(course.getCourseName());
             statistics.setCapacity(course.getCapacity());
-            statistics.setEnrollmentCount(count);
+            statistics.setEnrollmentCount(
+                    countMap.getOrDefault(course.getId(), 0L)
+            );
             result.add(statistics);
         }
         return result;
+    }
+    public void clearCacheAfterCommit(){
+        if(TransactionSynchronizationManager.isSynchronizationActive()){
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit(){
+                    //获取课程缓存
+                    org.springframework.cache.Cache cache = cacheManager.getCache("courses");
+                    //清理缓存
+                    if(cache != null ){
+                        cache.clear();
+                    }
+                }
+            });
+        }
     }
 
 }

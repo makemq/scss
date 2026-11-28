@@ -21,4 +21,10 @@ public class Course implements Serializable {
     private Integer startSection;
     private Integer endSection;
     private Integer status;
+    //课程类别
+    private String courseCategory;
+    //课程性质
+    private String courseType;
+    //授课方式
+    private String teachingMode;
 }
